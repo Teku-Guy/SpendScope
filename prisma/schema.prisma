@@ -1,0 +1,170 @@
+// prisma/schema.prisma
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id        String   @id @default(cuid())
+    email     String   @unique
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Plaid connection
+    plaidAccessToken String?
+    plaidItemId      String?
+
+    // User preferences (PostgreSQL JSON support)
+    preferences   Json?    @default("{}")
+    monthlyBudget Decimal? @db.Decimal(10, 2)
+
+    // Relations
+    accounts         Account[]
+    transactions     Transaction[]
+    predictions      SpendingPrediction[]
+    budgetAlerts     BudgetAlert[]
+    budgetCategories BudgetCategory[]
+
+    @@map("users")
+}
+
+model Account {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Plaid account data
+    plaidAccountId String  @unique
+    name           String
+    officialName   String?
+    type           String
+    subtype        String?
+    balance        Decimal @db.Decimal(12, 2)
+
+    // PostgreSQL JSON for metadata
+    metadata Json? @default("{}")
+
+    transactions Transaction[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("accounts")
+}
+
+model Transaction {
+    id        String  @id @default(cuid())
+    userId    String
+    user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    accountId String
+    account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+    // Plaid transaction data
+    plaidTransactionId String   @unique
+    amount             Decimal  @db.Decimal(10, 2)
+    date               DateTime
+    name               String
+    merchantName       String?
+
+    // Categorization
+    category    String
+    subcategory String?
+    isEssential Boolean @default(false)
+
+    // AI predictions & metadata (PostgreSQL JSON advantage)
+    aiData        Json? @default("{}")
+    plaidMetadata Json? @default("{}")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // PostgreSQL index for better performance
+    @@index([userId, date])
+    @@index([category])
+    @@map("transactions")
+}
+
+model SpendingPrediction {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    month          Int
+    year           Int
+    predictedTotal Decimal  @db.Decimal(12, 2)
+    actualTotal    Decimal? @db.Decimal(12, 2)
+    confidence     Float
+
+    // Category breakdowns (PostgreSQL JSONB advantage)
+    predictions Json  @default("{}")
+    metadata    Json? @default("{}")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, month, year])
+    @@map("spending_predictions")
+}
+
+model BudgetCategory {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    name         String
+    budgetLimit  Decimal @db.Decimal(10, 2)
+    currentSpend Decimal @default(0) @db.Decimal(10, 2)
+    category     String
+
+    // PostgreSQL JSON for flexible category rules
+    rules Json? @default("{}")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("budget_categories")
+}
+
+model BudgetAlert {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    type     AlertType
+    category String?
+    message  String
+    severity AlertSeverity
+    isRead   Boolean       @default(false)
+
+    // Financial amounts with proper precision
+    currentAmount   Decimal? @db.Decimal(10, 2)
+    budgetLimit     Decimal? @db.Decimal(10, 2)
+    projectedAmount Decimal? @db.Decimal(10, 2)
+
+    // Additional metadata
+    metadata Json? @default("{}")
+
+    createdAt DateTime @default(now())
+
+    @@map("budget_alerts")
+}
+
+enum AlertType {
+    BUDGET_EXCEEDED
+    PROJECTED_OVERSPEND
+    UNUSUAL_SPENDING
+    BILL_DUE
+    SAVINGS_OPPORTUNITY
+}
+
+enum AlertSeverity {
+    LOW
+    MEDIUM
+    HIGH
+    CRITICAL
+}
