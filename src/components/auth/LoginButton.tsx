@@ -2,6 +2,7 @@
 'use client'
 
 import { signIn, signOut, useSession } from 'next-auth/react'
+import  { Button } from '@/components/ui/Button';
 
 export default function LoginButton() {
   const { data: session, status } = useSession()
@@ -17,21 +18,22 @@ export default function LoginButton() {
           <p className="font-medium">{session.user?.name}</p>
           <p className="text-gray-500">{session.user?.email}</p>
         </div>
-        <button 
+        <Button 
           onClick={() => signOut()} 
+          variant="outline"
         >
           Sign Out
-        </button>
+        </Button>
         </div>
     )
   }
 
   return (
-    <button 
+    <Button 
       onClick={() => signIn('google')}
       className="bg-blue-600 hover:bg-blue-700"
     >
       Sign in with Google
-    </button>
+    </Button>
   )
 }

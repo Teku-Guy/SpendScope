@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
+    console.log(accounts);
+
     return NextResponse.json({ accounts });
   } catch (error) {
     console.error('Error fetching accounts:', error);
