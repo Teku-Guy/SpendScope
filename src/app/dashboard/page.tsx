@@ -1,75 +1,71 @@
-// app/dashboard/page.tsx - Dashboard with Plaid integration
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
-import LoginButton from '@/components/auth/LoginButton'
-import PlaidLink from '@/components/plaid/PlaidLink'
-import BankAccountsList from '@/components/plaid/BankAccountsList'
+'use client'
 
-export default async function Dashboard() {
-  const session = await getServerSession(authOptions)
+import { useSession } from 'next-auth/react'
+import { useState, useCallback, useMemo } from 'react'
+import PlaidLink from '@/components/plaid/PlaidLink'
+import TransactionList from './TransactionList'
+import SpendingChart from './SpendingChart'
+import MonthlySummary from './MonthlySummary'
+import CategoryBreakdown from './CategoryBreakdown'
+
+export default function DashboardPage() {
+  const { data: session } = useSession()
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handlePlaidSuccess = useCallback(() => {
+    // Refresh all components when a new account is connected
+    setRefreshKey(prev => prev + 1)
+  }, [])
 
   if (!session) {
-    redirect('/auth/signin')
+    return null // This will be handled by the layout redirect
   }
 
-  // Check if user has connected bank accounts
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      bankAccounts: true,
-    },
-  })
-
-  const hasConnectedBank = user?.plaidAccessToken && user.bankAccounts.length > 0;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <h1 className="text-xl font-semibold">SpendScope Dashboard</h1>
-            <LoginButton />
-          </div>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Welcome back, {session.user?.name?.split(' ')[0] || 'there'}!
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Here&apos;s an overview of your financial activity
+          </p>
+
+          {/* Plaid Connect Button */}
+          {useMemo(() => (
+            <PlaidLink onSuccess={handlePlaidSuccess} />
+          ), [handlePlaidSuccess])}
         </div>
-      </nav>
-      
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {!hasConnectedBank ? (
-            // Show bank connection if not connected
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Connect Your Bank Account
-              </h2>
-              <p className="text-gray-600 mb-6">
-                To get started with SpendScope, connect your bank account to automatically track your spending and get AI-powered predictions.
-              </p>
-              <PlaidLink />
-            </div>
-          ) : (
-            // Show dashboard if connected
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Connected Accounts
-                </h2>
-                <BankAccountsList />
-              </div>
-              
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Spending Overview
-                </h2>
-                <div className="text-center py-8 text-gray-500">
-                  Spending analytics coming soon...
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
+      </div>
+
+      {/* Monthly Summary Cards */}
+      <MonthlySummary key={`monthly-${refreshKey}`} />
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Spending Chart */}
+        <SpendingChart
+          key={`spending-${refreshKey}`}
+          period="30d"
+          chartType="area"
+        />
+
+        {/* Category Breakdown */}
+        <CategoryBreakdown
+          key={`category-${refreshKey}`}
+          period="30d"
+          chartType="pie"
+        />
+      </div>
+
+      {/* Recent Transactions */}
+      <TransactionList
+        key={`transactions-${refreshKey}`}
+        limit={10}
+        showFilters={true}
+      />
     </div>
   )
 }

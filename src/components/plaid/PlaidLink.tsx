@@ -1,104 +1,124 @@
-// components/plaid/PlaidLink.tsx
-'use client';
+'use client'
 
-import { usePlaidLink } from 'react-plaid-link';
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { usePlaidLink } from 'react-plaid-link'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface PlaidLinkProps {
-  readonly onSuccess?: () => void;
+  onSuccess?: () => void;
 }
 
 export default function PlaidLink({ onSuccess }: PlaidLinkProps) {
-  const { data: session } = useSession();
-  const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [linkToken, setLinkToken] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const { data: session } = useSession()
+  const tokenRequestedRef = useRef(false)
 
-  // Get link token when component mounts
   useEffect(() => {
-    const getLinkToken = async () => {
+    const createLinkToken = async () => {
+      if (tokenRequestedRef.current) return
+      tokenRequestedRef.current = true
+
       try {
         const response = await fetch('/api/plaid/create-link-token', {
           method: 'POST',
-        });
-        const data = await response.json();
-        setLinkToken(data.link_token);
-      } catch (error) {
-        console.error('Error getting link token:', error);
-      }
-    };
+        })
+        const data = await response.json()
 
-    if (session) {
-      getLinkToken();
+        if (data.link_token) {
+          setLinkToken(data.link_token)
+        }
+      } catch (error) {
+        console.error('Error creating link token:', error)
+        tokenRequestedRef.current = false
+      }
     }
-  }, [session]);
+
+    if (session && !linkToken) {
+      createLinkToken()
+    }
+  }, [session, linkToken])
+
+  const handleSuccess = useCallback(async (public_token: string) => {
+    setIsLoading(true)
+    try {
+      // Exchange public token for access token
+      const response = await fetch('/api/plaid/exchange-public-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ public_token }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Sync transactions
+        await fetch('/api/plaid/sync-transactions', {
+          method: 'POST',
+        })
+
+        onSuccess?.()
+      }
+    } catch (error) {
+      console.error('Error connecting bank:', error)
+    }
+    setIsLoading(false)
+  }, [onSuccess])
 
   const { open, ready } = usePlaidLink({
     token: linkToken,
-    onSuccess: (public_token, metadata) => {
-      const exchangeToken = async () => {
-        setIsLoading(true);
-        try {
-          // Exchange public token for access token
-          const response = await fetch('/api/plaid/exchange-public-token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ public_token }),
-          });
-
-          if (response.ok) {
-            // Sync transactions
-            await fetch('/api/plaid/sync-transactions', {
-              method: 'POST',
-            });
-
-            onSuccess?.();
-          }
-        } catch (error) {
-          console.error('Error connecting bank:', error);
-        }
-        setIsLoading(false);
-      };
-      void exchangeToken();
+    onSuccess: (public_token) => {
+      void handleSuccess(public_token)
     },
-    onExit: (err, metadata) => {
+    onExit: (err) => {
       if (err) {
-        console.error('Plaid Link error:', err);
+        console.error('Plaid Link error:', err)
       }
     },
-  });
+  })
 
   if (!session) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center">
         <p className="text-gray-500">Please sign in to connect your bank account</p>
       </div>
-    );
+    )
   }
 
   if (!linkToken) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="text-gray-500 mt-2">Preparing bank connection...</p>
+      <div className="flex items-center justify-center">
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+        <span className="ml-2 text-sm text-gray-600">Preparing bank connection...</span>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="text-center py-8">
+    <div className="text-center">
       <button
         onClick={() => open()}
         disabled={!ready || isLoading}
-        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+        className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+          ready && !isLoading
+            ? 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+            : 'bg-gray-400 cursor-not-allowed'
+        }`}
       >
-        {isLoading ? 'Connecting...' : 'Connect Bank Account'}
+        {isLoading ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+            Connecting...
+          </>
+        ) : (
+          'Connect Bank Account'
+        )}
       </button>
-      <p className="text-sm text-gray-500 mt-2">
-        Securely connect your bank account to start tracking spending
+      <p className="mt-2 text-xs text-gray-500">
+        Securely connect your bank account to start tracking expenses
       </p>
     </div>
-  );
+  )
 }
