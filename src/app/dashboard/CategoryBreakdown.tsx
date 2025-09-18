@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
 interface CategoryData {
@@ -26,8 +26,8 @@ export default function CategoryBreakdown({
   const [selectedPeriod, setSelectedPeriod] = useState(period)
   const [selectedChart, setSelectedChart] = useState(chartType)
 
-  // Category colors for consistent theming
-  const categoryColors: Record<string, string> = {
+  // Category colors for consistent theming - memoized to prevent useEffect dependency issues
+  const categoryColors = useMemo(() => ({
     'Food & Dining': '#ef4444',
     'Shopping': '#f97316',
     'Transportation': '#eab308',
@@ -38,7 +38,7 @@ export default function CategoryBreakdown({
     'Education': '#10b981',
     'Personal Care': '#f59e0b',
     'Other': '#6b7280'
-  }
+  }), [])
 
   useEffect(() => {
     const fetchCategoryData = async () => {
@@ -50,7 +50,7 @@ export default function CategoryBreakdown({
           // Add colors to the data
           const dataWithColors = result.data.map((item: Omit<CategoryData, 'color'>) => ({
             ...item,
-            color: categoryColors[item.category] || categoryColors['Other']
+            color: categoryColors[item.category as keyof typeof categoryColors] || categoryColors['Other']
           }))
           setData(dataWithColors)
         }

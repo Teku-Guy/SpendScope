@@ -13,6 +13,7 @@
     "@apollo/experimental-nextjs-app-support": "^0.13.1",
     "@apollo/server": "^5.0.0",
     "@auth/prisma-adapter": "^2.10.0",
+    "@headlessui/react": "^2.2.8",
     "@neondatabase/serverless": "^1.0.1",
     "@prisma/client": "^6.16.2",
     "@types/bcryptjs": "^2.4.6",

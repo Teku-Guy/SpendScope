@@ -3,7 +3,7 @@
 import { useSession, signOut } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import Image from 'next/image'
-import { LayoutDashboard, CreditCard, TrendingUp, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, CreditCard, TrendingUp, Settings, LogOut, PiggyBank } from 'lucide-react'
 
 export default function DashboardLayout({
   children,
@@ -27,6 +27,7 @@ export default function DashboardLayout({
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, current: true },
     { name: 'Transactions', href: '/dashboard/transactions', icon: CreditCard, current: false },
+    { name: 'Budgets', href: '/dashboard/budgets', icon: PiggyBank, current: false },
     { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp, current: false },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: false },
   ]
