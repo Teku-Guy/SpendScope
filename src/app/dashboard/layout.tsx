@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
-import { redirect } from 'next/navigation'
+import { redirect,usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { LayoutDashboard, CreditCard, TrendingUp, Settings, LogOut, PiggyBank } from 'lucide-react'
 
@@ -11,6 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
 
   if (status === 'loading') {
     return (
@@ -25,11 +26,11 @@ export default function DashboardLayout({
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, current: true },
-    { name: 'Transactions', href: '/dashboard/transactions', icon: CreditCard, current: false },
-    { name: 'Budgets', href: '/dashboard/budgets', icon: PiggyBank, current: false },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp, current: false },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings, current: false },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Transactions', href: '/dashboard/transactions', icon: CreditCard },
+    { name: 'Budgets', href: '/dashboard/budgets', icon: PiggyBank },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
+    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
 
   return (
@@ -47,26 +48,29 @@ export default function DashboardLayout({
             <ul className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul className="-mx-2 space-y-1">
-                  {navigation.map((item) => (
-                    <li key={item.name}>
-                      <a
-                        href={item.href}
-                        className={`group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold ${
-                          item.current
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <item.icon
-                          className={`h-6 w-6 shrink-0 ${
-                            item.current ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600'
+                  {navigation.map((item) => {
+                    const isCurrent = pathname === item.href
+                    return (
+                      <li key={item.name}>
+                        <a
+                          href={item.href}
+                          className={`group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold ${
+                            isCurrent
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                           }`}
-                          aria-hidden="true"
-                        />
-                        {item.name}
-                      </a>
-                    </li>
-                  ))}
+                        >
+                          <item.icon
+                            className={`h-6 w-6 shrink-0 ${
+                              isCurrent ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600'
+                            }`}
+                            aria-hidden="true"
+                          />
+                          {item.name}
+                        </a>
+                      </li>
+                    )
+                  })}
                 </ul>
               </li>
 

@@ -9,6 +9,7 @@ import SpendingChart from './SpendingChart'
 import MonthlySummary from './MonthlySummary'
 import CategoryBreakdown from './CategoryBreakdown'
 import BudgetOverview from './BudgetOverview'
+import SpendingInsights from './SpendingInsights'
 
 export default function DashboardPage() {
   const { data: session } = useSession()
@@ -60,6 +61,9 @@ export default function DashboardPage() {
 
       {/* Budget Overview */}
       <BudgetOverview key={`budget-${refreshKey}`} />
+
+      {/* Spending Insights */}
+      <SpendingInsights key={`insights-${refreshKey}`} />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
