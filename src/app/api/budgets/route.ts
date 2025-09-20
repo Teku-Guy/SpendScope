@@ -116,11 +116,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     });
 
+    // Calculate current spending for the newly created budget
+    const currentMonth = new Date();
+    const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
+
+    const spending = await prisma.transaction.aggregate({
+      where: {
+        userId: session.user.id,
+        category: budget.category,
+        date: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const currentSpend = parseFloat(spending._sum.amount?.toString() || '0');
+    const budgetLimitNum = parseFloat(budget.budgetLimit.toString());
+
     return NextResponse.json({
       success: true,
       budget: {
         ...budget,
-        budgetLimit: parseFloat(budget.budgetLimit.toString()),
+        budgetLimit: budgetLimitNum,
+        currentSpend,
+        percentage: budgetLimitNum > 0 ? (currentSpend / budgetLimitNum) * 100 : 0,
+        remaining: budgetLimitNum - currentSpend,
       },
     });
   } catch (error) {

@@ -32,13 +32,14 @@ interface TransactionWithAccount {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : undefined;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 20;
+    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!, 10) : 0;
     const category = searchParams.get('category') || undefined;
     const days = searchParams.get('days') ? parseInt(searchParams.get('days')!, 10) : 30;
     const search = searchParams.get('search') || undefined;
@@ -66,6 +67,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       ];
     }
 
+    // Get total count for pagination
+    const totalCount = await prisma.transaction.count({
+      where: whereClause
+    });
+
     const rawTransactions = await prisma.transaction.findMany({
       where: whereClause,
       include: {
@@ -79,7 +85,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       orderBy: {
         date: 'desc'
       },
-      ...(limit && { take: limit })
+      take: limit,
+      skip: offset
     });
 
     const transactions: TransactionWithAccount[] = rawTransactions.map(t => ({
@@ -94,7 +101,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({
       success: true,
-      transactions
+      transactions,
+      pagination: {
+        total: totalCount,
+        limit,
+        offset,
+        hasMore: offset + limit < totalCount
+      }
     });
 
   } catch (error) {

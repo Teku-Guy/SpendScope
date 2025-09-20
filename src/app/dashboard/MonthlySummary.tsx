@@ -75,12 +75,12 @@ export default function MonthlySummary() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card-modern p-6">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4" />
+          <div className="h-4 bg-muted rounded w-1/3 mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded" />
+              <div key={i} className="h-24 bg-muted rounded-lg" />
             ))}
           </div>
         </div>
@@ -90,8 +90,8 @@ export default function MonthlySummary() {
 
   if (!data) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-500">No data available</p>
+      <div className="card-modern p-6">
+        <p className="text-muted-foreground">No data available</p>
       </div>
     )
   }
@@ -107,8 +107,8 @@ export default function MonthlySummary() {
       value: formatCurrency(data.currentMonth.spending),
       change: data.trends.spendingChange,
       icon: CreditCardIcon,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
+      color: 'text-destructive',
+      bgColor: 'bg-destructive/10',
       isNegativeBetter: true
     },
     {
@@ -116,8 +116,8 @@ export default function MonthlySummary() {
       value: formatCurrency(data.currentMonth.income),
       change: data.trends.incomeChange,
       icon: DollarSignIcon,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-500/10',
       isNegativeBetter: false
     },
     {
@@ -125,8 +125,8 @@ export default function MonthlySummary() {
       value: formatCurrency(data.currentMonth.netFlow),
       change: netFlowChange,
       icon: data.currentMonth.netFlow >= 0 ? TrendingUpIcon : TrendingDownIcon,
-      color: data.currentMonth.netFlow >= 0 ? 'text-green-600' : 'text-red-600',
-      bgColor: data.currentMonth.netFlow >= 0 ? 'bg-green-50' : 'bg-red-50',
+      color: data.currentMonth.netFlow >= 0 ? 'text-emerald-600' : 'text-destructive',
+      bgColor: data.currentMonth.netFlow >= 0 ? 'bg-emerald-500/10' : 'bg-destructive/10',
       isNegativeBetter: false
     },
     {
@@ -134,8 +134,8 @@ export default function MonthlySummary() {
       value: data.currentMonth.transactions.toString(),
       change: data.trends.transactionChange,
       icon: CreditCardIcon,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       isNegativeBetter: false
     }
   ]
@@ -143,8 +143,8 @@ export default function MonthlySummary() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Monthly Summary</h2>
-        <p className="text-sm text-gray-500">{getCurrentMonthName()}</p>
+        <h2 className="text-xl font-bold text-foreground">Monthly Summary</h2>
+        <p className="text-sm text-muted-foreground">{getCurrentMonthName()}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -154,17 +154,17 @@ export default function MonthlySummary() {
           const TrendIcon = isPositiveTrend ? TrendingUpIcon : TrendingDownIcon
 
           return (
-            <div key={card.title} className="bg-white rounded-lg shadow p-6">
+            <div key={card.title} className="card-modern p-6 hover:shadow-medium transition-all duration-200">
               <div className="flex items-center">
-                <div className={`flex-shrink-0 p-3 rounded-full ${card.bgColor}`}>
+                <div className={`flex-shrink-0 p-3 rounded-full ${card.bgColor} border border-border/50`}>
                   <IconComponent className={`h-6 w-6 ${card.color}`} />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-muted-foreground truncate">
                       {card.title}
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-foreground">
                       {card.value}
                     </dd>
                   </dl>
@@ -174,17 +174,17 @@ export default function MonthlySummary() {
                 <div className="flex items-center text-sm">
                   <TrendIcon
                     className={`h-4 w-4 mr-1 ${
-                      isPositiveTrend ? 'text-green-500' : 'text-red-500'
+                      isPositiveTrend ? 'text-emerald-500' : 'text-destructive'
                     }`}
                   />
                   <span
                     className={`text-sm font-medium ${
-                      isPositiveTrend ? 'text-green-600' : 'text-red-600'
+                      isPositiveTrend ? 'text-emerald-600' : 'text-destructive'
                     }`}
                   >
                     {formatPercentage(Math.abs(card.change))}
                   </span>
-                  <span className="text-gray-500 ml-1">from last month</span>
+                  <span className="text-muted-foreground ml-1">from last month</span>
                 </div>
               </div>
             </div>
@@ -193,9 +193,12 @@ export default function MonthlySummary() {
       </div>
 
       {/* Quick Insights */}
-      <div className="bg-blue-50 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-blue-900 mb-2">Quick Insights</h3>
-        <div className="space-y-1 text-sm text-blue-800">
+      <div className="card-modern p-4 bg-primary/5 border-primary/20">
+        <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+          <span className="text-primary">💡</span>
+          Quick Insights
+        </h3>
+        <div className="space-y-1 text-sm text-foreground/80">
           {data.currentMonth.netFlow > 0 && (
             <p>✓ You&apos;re saving {formatCurrency(data.currentMonth.netFlow)} this month</p>
           )}

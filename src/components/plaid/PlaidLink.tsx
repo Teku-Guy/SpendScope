@@ -54,18 +54,48 @@ export default function PlaidLink({ onSuccess }: PlaidLinkProps) {
       const data = await response.json()
 
       if (data.success) {
+        console.log(data.message)
+
+        if (data.isExistingConnection) {
+          console.log('Refreshing existing bank connection data...')
+          alert('Bank account data refreshed successfully! All transactions have been updated.')
+        } else {
+          console.log('New bank account connected successfully')
+          alert('Bank account connected successfully!')
+        }
+
         // Sync transactions
-        await fetch('/api/plaid/sync-transactions', {
+        console.log('Starting transaction sync...')
+        const syncResponse = await fetch('/api/plaid/sync-transactions', {
           method: 'POST',
         })
 
+        const syncData = await syncResponse.json()
+        console.log('Transaction sync result:', syncData)
+
+        if (!syncResponse.ok) {
+          console.error('Transaction sync failed:', syncData)
+          alert('Warning: Bank account connected but transaction sync failed. Please try refreshing manually.')
+        } else {
+          console.log('Transaction sync completed successfully')
+        }
+
         onSuccess?.()
+      } else {
+        console.error('Failed to connect bank account:', data.error)
+        if (data.error?.includes('already connected')) {
+          alert('This bank account is already connected to another user account.')
+        } else {
+          alert(data.error || 'Failed to connect bank account. Please try again.')
+        }
       }
     } catch (error) {
       console.error('Error connecting bank:', error)
     }
     setIsLoading(false)
   }, [onSuccess])
+
+  
 
   const { open, ready } = usePlaidLink({
     token: linkToken,
@@ -76,13 +106,13 @@ export default function PlaidLink({ onSuccess }: PlaidLinkProps) {
       if (err) {
         console.error('Plaid Link error:', err)
       }
-    },
+    }
   })
 
   if (!session) {
     return (
       <div className="text-center">
-        <p className="text-gray-500">Please sign in to connect your bank account</p>
+        <p className="text-muted-foreground">Please sign in to connect your bank account</p>
       </div>
     )
   }
@@ -90,8 +120,8 @@ export default function PlaidLink({ onSuccess }: PlaidLinkProps) {
   if (!linkToken) {
     return (
       <div className="flex items-center justify-center">
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
-        <span className="ml-2 text-sm text-gray-600">Preparing bank connection...</span>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+        <span className="ml-2 text-sm text-muted-foreground">Preparing bank connection...</span>
       </div>
     )
   }
@@ -101,10 +131,10 @@ export default function PlaidLink({ onSuccess }: PlaidLinkProps) {
       <button
         onClick={() => open()}
         disabled={!ready || isLoading}
-        className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+        className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white transition-all duration-200 ${
           ready && !isLoading
-            ? 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-            : 'bg-gray-400 cursor-not-allowed'
+            ? 'bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/20 shadow-sm hover:shadow-md'
+            : 'bg-muted-foreground/50 cursor-not-allowed'
         }`}
       >
         {isLoading ? (
@@ -116,7 +146,7 @@ export default function PlaidLink({ onSuccess }: PlaidLinkProps) {
           'Connect Bank Account'
         )}
       </button>
-      <p className="mt-2 text-xs text-gray-500">
+      <p className="mt-2 text-xs text-muted-foreground">
         Securely connect your bank account to start tracking expenses
       </p>
     </div>

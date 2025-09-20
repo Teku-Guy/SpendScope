@@ -3,6 +3,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import NextAuthSessionProvider from '@/components/providers/SessionProvider'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,10 +18,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen transition-colors duration-300`}>
         <NextAuthSessionProvider>
-          {children}
+          <ThemeProvider defaultTheme="system" defaultColorScheme="blue">
+            {children}
+          </ThemeProvider>
         </NextAuthSessionProvider>
       </body>
     </html>

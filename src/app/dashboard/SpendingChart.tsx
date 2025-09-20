@@ -94,10 +94,10 @@ export default function SpendingChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="apple-card p-6">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4" />
-          <div className="h-64 bg-gray-200 rounded" />
+          <div className="h-4 bg-muted rounded w-1/3 mb-4" />
+          <div className="h-64 bg-muted rounded" />
         </div>
       </div>
     )
@@ -172,11 +172,11 @@ export default function SpendingChart({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="apple-card p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">Spending Trends</h3>
-          <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+          <h3 className="text-lg font-medium text-foreground">Spending Trends</h3>
+          <div className="mt-1 flex items-center space-x-4 text-sm text-muted-foreground">
             <span>Total: {formatCurrency(totalSpent)}</span>
             <span>Daily Avg: {formatCurrency(averageDaily)}</span>
             <div className={`flex items-center space-x-1 ${

@@ -30,30 +30,26 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome back, {session.user?.name?.split(' ')[0] || 'there'}!
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Here&apos;s an overview of your financial activity
-          </p>
+      <div className="apple-card p-8 apple-blur">
+        <h1 className="text-3xl font-bold text-foreground mb-3 letter-spacing-tight">
+          Welcome back, {session.user?.name?.split(' ')[0] || 'there'}!
+        </h1>
+        <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
+          Here&apos;s an overview of your financial activity
+        </p>
 
-          {/* Plaid Connect Button */}
-          {plaidLinkComponent}
-        </div>
+        {/* Plaid Connect Button */}
+        {plaidLinkComponent}
       </div>
 
       {/* Bank Accounts Section */}
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Connected Accounts
-          </h2>
-          <BankAccountsList key={`accounts-${refreshKey}`} />
-        </div>
+      <div className="apple-card p-8">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
+          Connected Accounts
+        </h2>
+        <BankAccountsList key={`accounts-${refreshKey}`} />
       </div>
 
       {/* Monthly Summary Cards */}
@@ -66,7 +62,7 @@ export default function DashboardPage() {
       <SpendingInsights key={`insights-${refreshKey}`} />
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spending Chart */}
         <SpendingChart
           key={`spending-${refreshKey}`}

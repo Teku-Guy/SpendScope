@@ -129,7 +129,7 @@ export default function CategoryBreakdown({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="apple-card rounded-lg shadow p-6">
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/3 mb-4" />
           <div className="h-64 bg-gray-200 rounded" />
@@ -139,11 +139,11 @@ export default function CategoryBreakdown({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="apple-card rounded-lg shadow p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">Spending by Category</h3>
-          <p className="text-sm text-gray-500">Total: {formatCurrency(totalSpent)}</p>
+          <h3 className="text-lg font-medium text-foreground">Spending by Category</h3>
+          <p className="text-sm text-muted-foreground">Total: {formatCurrency(totalSpent)}</p>
         </div>
 
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
@@ -187,19 +187,19 @@ export default function CategoryBreakdown({
                   style={{ backgroundColor: category.color }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-primary-900 truncate">
                     {category.category}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-primary-900">
                     {category.count} transactions
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">
                   {formatCurrency(category.amount)}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {category.percentage.toFixed(1)}%
                 </p>
               </div>

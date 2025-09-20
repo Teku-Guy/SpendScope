@@ -17,10 +17,16 @@ import {
   Save,
   AlertCircle,
   CheckCircle,
-  X
+  X,
+  Mail,
+  Clock,
+  Globe,
+  DollarSign
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { ColorSchemePicker } from '@/components/ui/ThemeSwitcher'
+import { useTheme, type Theme } from '@/contexts/ThemeContext'
 import Image from 'next/image'
 
 interface UserSettings {
@@ -39,6 +45,24 @@ interface NotificationSettings {
   weeklyDigest: boolean
   monthlyReport: boolean
   accountConnection: boolean
+}
+
+interface CategoryRules {
+  color?: string
+  isCustom?: boolean
+}
+
+interface BankAccount {
+  id: string;
+  name: string;
+  type: string;
+  balance: string;
+}
+
+interface ApiCategory {
+  id: string;
+  name: string;
+  rules?: CategoryRules;
 }
 
 interface CategorySettings {
@@ -101,6 +125,11 @@ export default function SettingsPage() {
     isDefault: false
   })
 
+  // Bank accounts state
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+  const [loadingAccounts, setLoadingAccounts] = useState(false)
+  const [syncingTransactions, setSyncingTransactions] = useState(false)
+
   const timezones = [
     'America/New_York',
     'America/Chicago',
@@ -136,14 +165,143 @@ export default function SettingsPage() {
     setTimeout(() => setMessage(null), 5000)
   }
 
+  // Load settings when component mounts
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/settings')
+        if (!response.ok) {
+          throw new Error('Failed to load settings')
+        }
+
+        const data = await response.json()
+
+        if (data.profile) {
+          setProfileData(prev => ({
+            ...prev,
+            name: data.profile.name || '',
+            email: data.profile.email || '',
+            timezone: data.profile.timezone || 'America/New_York'
+          }))
+        }
+
+        if (data.notifications) {
+          setNotifications(data.notifications)
+        }
+
+        if (data.general) {
+          setGeneralSettings(data.general)
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error)
+        showMessage('error', 'Failed to load settings')
+      }
+    }
+
+    const loadCategories = async () => {
+      try {
+        const response = await fetch('/api/budget-categories')
+        if (!response.ok) {
+          throw new Error('Failed to load categories')
+        }
+
+        const data: ApiCategory[] = await response.json()
+        const categoriesForUI: CategorySettings[] = data.map((cat: ApiCategory) => ({
+          id: cat.id,
+          name: cat.name,
+          color: (cat.rules as CategoryRules)?.color || '#3b82f6',
+          isDefault: !(cat.rules as CategoryRules)?.isCustom
+        }))
+
+        setCategories(prevCategories => [
+          // Keep default categories
+          ...prevCategories.filter(c => c.isDefault),
+          // Add user's custom categories
+          ...categoriesForUI.filter(c => !c.isDefault)
+        ])
+      } catch (error) {
+        console.error('Error loading categories:', error)
+      }
+    }
+
+    const loadBankAccounts = async () => {
+      try {
+        setLoadingAccounts(true)
+        const response = await fetch('/api/accounts')
+        if (!response.ok) {
+          throw new Error('Failed to load bank accounts')
+        }
+
+        const data = await response.json()
+        setBankAccounts(data.accounts || [])
+      } catch (error) {
+        console.error('Error loading bank accounts:', error)
+      } finally {
+        setLoadingAccounts(false)
+      }
+    }
+
+    if (session?.user) {
+      loadSettings()
+      loadCategories()
+      loadBankAccounts()
+    }
+  }, [session])
+
+  const disconnectAccount = async (accountId: string, accountName: string) => {
+    if (!confirm(`Are you sure you want to disconnect "${accountName}"? This will remove all associated transaction data.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/accounts/disconnect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accountId }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect account')
+      }
+
+      // Remove account from state
+      setBankAccounts(bankAccounts.filter(acc => acc.id !== accountId))
+      showMessage('success', 'Account disconnected successfully')
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Failed to disconnect account';
+      showMessage('error', message);
+    }
+  }
+
   const saveProfileSettings = async () => {
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          profile: profileData,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save profile settings')
+      }
+
       showMessage('success', 'Profile settings saved successfully')
     } catch (error) {
-      showMessage('error', 'Failed to save profile settings')
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Failed to save profile settings';
+      showMessage('error', message);
     } finally {
       setLoading(false)
     }
@@ -152,11 +310,27 @@ export default function SettingsPage() {
   const saveNotificationSettings = async () => {
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notifications,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save notification settings')
+      }
+
       showMessage('success', 'Notification settings saved successfully')
     } catch (error) {
-      showMessage('error', 'Failed to save notification settings')
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Failed to save notification settings';
+      showMessage('error', message);
     } finally {
       setLoading(false)
     }
@@ -165,38 +339,95 @@ export default function SettingsPage() {
   const saveGeneralSettings = async () => {
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          general: generalSettings,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save general settings')
+      }
+
       showMessage('success', 'General settings saved successfully')
     } catch (error) {
-      showMessage('error', 'Failed to save general settings')
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Failed to save general settings';
+      showMessage('error', message);
     } finally {
       setLoading(false)
     }
   }
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCategory.name.trim()) return
 
-    const category: CategorySettings = {
-      id: Date.now().toString(),
-      ...newCategory
-    }
+    try {
+      const response = await fetch('/api/budget-categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newCategory.name,
+          category: newCategory.name.toLowerCase().replace(/\s+/g, '_'),
+          budgetLimit: 1000, // Default budget limit
+          color: newCategory.color,
+        }),
+      })
 
-    setCategories([...categories, category])
-    setNewCategory({ name: '', color: '#3b82f6', isDefault: false })
-    showMessage('success', 'Category added successfully')
+      if (!response.ok) {
+        throw new Error('Failed to add category')
+      }
+
+      const addedCategory = await response.json()
+
+      const categoryForUI: CategorySettings = {
+        id: addedCategory.id,
+        name: addedCategory.name,
+        color: (addedCategory.rules as CategoryRules)?.color || newCategory.color,
+        isDefault: false
+      }
+
+      setCategories([...categories, categoryForUI])
+      setNewCategory({ name: '', color: '#3b82f6', isDefault: false })
+      showMessage('success', 'Category added successfully')
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Failed to add category';
+      showMessage('error', message);
+    }
   }
 
-  const removeCategory = (categoryId: string) => {
+  const removeCategory = async (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId)
     if (category?.isDefault) {
       showMessage('error', 'Cannot delete default categories')
       return
     }
 
-    setCategories(categories.filter(c => c.id !== categoryId))
-    showMessage('success', 'Category removed successfully')
+    try {
+      const response = await fetch(`/api/budget-categories/${categoryId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to remove category')
+      }
+
+      setCategories(categories.filter(c => c.id !== categoryId))
+      showMessage('success', 'Category removed successfully')
+    } catch (error) {
+      showMessage('error', error instanceof Error ? error.message : 'Failed to remove category')
+    }
   }
 
   const exportData = () => {
@@ -219,13 +450,34 @@ export default function SettingsPage() {
     showMessage('success', 'Data exported successfully')
   }
 
+  const syncTransactions = async () => {
+    setSyncingTransactions(true);
+    try {
+      const response = await fetch('/api/plaid/sync-transactions', {
+        method: 'POST',
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showMessage('success', `Synced ${result.processed} transactions successfully`);
+      } else {
+        showMessage('error', result.error || 'Failed to sync transactions');
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to sync transactions');
+    } finally {
+      setSyncingTransactions(false);
+    }
+  }
+
   const TabButton = ({ tab }: { tab: typeof tabs[0] }) => (
     <button
       onClick={() => setActiveTab(tab.id)}
       className={`flex items-center space-x-3 w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
         activeTab === tab.id
-          ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          ? 'bg-primary/10 text-primary border-r-2 border-primary'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
       }`}
     >
       <tab.icon className="h-5 w-5" />
@@ -249,14 +501,58 @@ export default function SettingsPage() {
     )
   }
 
+  const ThemeAndColorPicker = () => {
+    const { theme, colorScheme, setTheme, setColorScheme } = useTheme()
+
+    const themeOptions = [
+      { value: 'light', label: '🌞 Light', icon: Sun },
+      { value: 'dark', label: '🌙 Dark', icon: Moon },
+      { value: 'system', label: '💻 System', icon: SettingsIcon }
+    ]
+
+    return (
+      <div className="space-y-4">
+        {/* Theme Selection */}
+        <div>
+          <h4 className="text-sm font-medium mb-3">Theme Mode</h4>
+          <div className="grid grid-cols-3 gap-2">
+            {themeOptions.map((option) => {
+              const IconComponent = option.icon
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setTheme(option.value as Theme)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200 ${
+                    theme === option.value
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                >
+                  <IconComponent className="w-5 h-5" />
+                  <span className="text-xs font-medium">{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Color Scheme Selection */}
+        <div>
+          <h4 className="text-sm font-medium mb-3">Color Scheme</h4>
+          <ColorSchemePicker />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <MessageAlert />
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your account preferences and application settings</p>
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="text-muted-foreground">Manage your account preferences and application settings</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -271,13 +567,13 @@ export default function SettingsPage() {
 
         {/* Content */}
         <div className="flex-1">
-          <div className="bg-white rounded-lg border border-gray-200">
+          <div className="apple-card">
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
-                  <User className="h-6 w-6 text-gray-400" />
-                  <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+                  <User className="h-6 w-6 text-muted-foreground" />
+                  <h2 className="text-lg font-medium text-foreground">Profile Information</h2>
                 </div>
 
                 <div className="space-y-6">
@@ -290,8 +586,8 @@ export default function SettingsPage() {
                       height={64}
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Profile Photo</p>
-                      <p className="text-sm text-gray-500">JPG, GIF or PNG. 1MB max.</p>
+                      <p className="text-sm font-medium text-foreground">Profile Photo</p>
+                      <p className="text-sm text-muted-foreground">JPG, GIF or PNG. 1MB max.</p>
                     </div>
                     <Button variant="outline" size="sm">Change Photo</Button>
                   </div>
@@ -301,6 +597,9 @@ export default function SettingsPage() {
                       label="Full Name"
                       value={profileData.name}
                       onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                      icon={<User className="w-4 h-4" />}
+                      variant="filled"
+                      placeholder="Enter your full name"
                     />
 
                     <Input
@@ -308,19 +607,32 @@ export default function SettingsPage() {
                       type="email"
                       value={profileData.email}
                       onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                      icon={<Mail className="w-4 h-4" />}
+                      variant="filled"
+                      placeholder="Enter your email"
+                      disabled
+                      helper="Email cannot be changed"
                     />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                      <select
-                        value={profileData.timezone}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, timezone: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {timezones.map(timezone => (
-                          <option key={timezone} value={timezone}>{timezone}</option>
-                        ))}
-                      </select>
+                    <div className="md:col-span-2">
+                      <label className="block mb-2 text-sm font-medium text-foreground">
+                        <Clock className="w-4 h-4 inline mr-2" />
+                        Timezone
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={profileData.timezone}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, timezone: e.target.value }))}
+                          className="apple-input w-full px-4 py-3 text-sm appearance-none cursor-pointer pr-10"
+                        >
+                          {timezones.map(timezone => (
+                            <option key={timezone} value={timezone}>{timezone}</option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <Globe className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -338,41 +650,91 @@ export default function SettingsPage() {
             {activeTab === 'notifications' && (
               <div className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
-                  <Bell className="h-6 w-6 text-gray-400" />
-                  <h2 className="text-lg font-medium text-gray-900">Notification Preferences</h2>
+                  <Bell className="h-6 w-6 text-muted-foreground" />
+                  <h2 className="text-lg font-medium text-foreground">Notification Preferences</h2>
                 </div>
 
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    {Object.entries(notifications).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {key === 'budgetExceeded' && 'Get notified when you exceed your budget limits'}
-                            {key === 'largeTransaction' && 'Alert for transactions above your average spending'}
-                            {key === 'weeklyDigest' && 'Weekly summary of your spending patterns'}
-                            {key === 'monthlyReport' && 'Monthly financial report and insights'}
-                            {key === 'accountConnection' && 'Updates about connected bank accounts'}
-                          </p>
+                    {Object.entries(notifications).map(([key, value]) => {
+                      const getNotificationInfo = (key: string) => {
+                        switch (key) {
+                          case 'budgetExceeded':
+                            return {
+                              title: 'Budget Exceeded',
+                              description: 'Get notified when you exceed your budget limits',
+                              icon: <AlertCircle className="w-5 h-5 text-red-500" />
+                            }
+                          case 'largeTransaction':
+                            return {
+                              title: 'Large Transaction',
+                              description: 'Alert for transactions above your average spending',
+                              icon: <CreditCard className="w-5 h-5 text-orange-500" />
+                            }
+                          case 'weeklyDigest':
+                            return {
+                              title: 'Weekly Digest',
+                              description: 'Weekly summary of your spending patterns',
+                              icon: <Mail className="w-5 h-5 text-primary" />
+                            }
+                          case 'monthlyReport':
+                            return {
+                              title: 'Monthly Report',
+                              description: 'Monthly financial report and insights',
+                              icon: <Bell className="w-5 h-5 text-green-500" />
+                            }
+                          case 'accountConnection':
+                            return {
+                              title: 'Account Connection',
+                              description: 'Updates about connected bank accounts',
+                              icon: <Shield className="w-5 h-5 text-purple-500" />
+                            }
+                          default:
+                            return {
+                              title: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+                              description: '',
+                              icon: <Bell className="w-5 h-5 text-muted-foreground" />
+                            }
+                        }
+                      }
+
+                      const info = getNotificationInfo(key)
+
+                      return (
+                        <div key={key} className="flex items-center justify-between p-4 border border-border/50 rounded-xl hover:border-border transition-colors">
+                          <div className="flex items-center space-x-4">
+                            <div className="p-2 bg-muted rounded-lg">
+                              {info.icon}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">
+                                {info.title}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {info.description}
+                              </p>
+                            </div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <span className="sr-only">
+                              {info.title}
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={value}
+                              onChange={(e) => setNotifications(prev => ({ ...prev, [key]: e.target.checked }))}
+                              className="sr-only peer"
+                              aria-label={info.title}
+                            />
+                            <div className="w-12 h-7 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-background after:border-border after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary shadow-inner"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={value}
-                            onChange={(e) => setNotifications(prev => ({ ...prev, [key]: e.target.checked }))}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button onClick={saveNotificationSettings} disabled={loading}>
+                  <div className="flex justify-end pt-4 border-t border-border/50">
+                    <Button onClick={saveNotificationSettings} disabled={loading} className="px-6">
                       <Save className="h-4 w-4 mr-2" />
                       {loading ? 'Saving...' : 'Save Changes'}
                     </Button>
@@ -385,29 +747,48 @@ export default function SettingsPage() {
             {activeTab === 'categories' && (
               <div className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
-                  <Palette className="h-6 w-6 text-gray-400" />
-                  <h2 className="text-lg font-medium text-gray-900">Category Management</h2>
+                  <Palette className="h-6 w-6 text-muted-foreground" />
+                  <h2 className="text-lg font-medium text-foreground">Category Management</h2>
                 </div>
 
                 <div className="space-y-6">
                   {/* Add New Category */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-gray-900 mb-3">Add New Category</h3>
-                    <div className="flex items-center space-x-3">
-                      <Input
-                        placeholder="Category name"
-                        value={newCategory.name}
-                        onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-                        className="flex-1"
-                      />
-                      <input
-                        type="color"
-                        value={newCategory.color}
-                        onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
-                        className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                      />
-                      <Button onClick={addCategory} disabled={!newCategory.name.trim()}>
-                        Add
+                  <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-6 border border-primary/20">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Palette className="w-5 h-5 text-primary" />
+                      <h3 className="text-sm font-semibold text-primary">Add New Category</h3>
+                    </div>
+                    <div className="flex items-end space-x-3">
+                      <div className="flex-1">
+                        <Input
+                          label="Category Name"
+                          placeholder="e.g., Groceries, Entertainment"
+                          value={newCategory.name}
+                          onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+                          variant="default"
+                          helper="Choose a descriptive name for your category"
+                        />
+                      </div>
+                      <div className="flex flex-col items-center space-y-2">
+                        <label className="text-xs font-medium text-foreground">Color</label>
+                        <div className="relative">
+                          <input
+                            type="color"
+                            value={newCategory.color}
+                            onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
+                            className="w-12 h-12 border-2 border-border rounded-lg cursor-pointer hover:border-border transition-colors shadow-sm"
+                          />
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full border border-border flex items-center justify-center">
+                            <Palette className="w-2.5 h-2.5 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={addCategory}
+                        disabled={!newCategory.name.trim()}
+                        className="px-6 py-3"
+                      >
+                        Add Category
                       </Button>
                     </div>
                   </div>
@@ -415,15 +796,15 @@ export default function SettingsPage() {
                   {/* Category List */}
                   <div className="space-y-3">
                     {categories.map((category) => (
-                      <div key={category.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div key={category.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: category.color }}
                           />
-                          <span className="text-sm font-medium text-gray-900">{category.name}</span>
+                          <span className="text-sm font-medium text-foreground">{category.name}</span>
                           {category.isDefault && (
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Default</span>
+                            <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">Default</span>
                           )}
                         </div>
                         {!category.isDefault && (
@@ -446,41 +827,58 @@ export default function SettingsPage() {
             {activeTab === 'general' && (
               <div className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
-                  <SettingsIcon className="h-6 w-6 text-gray-400" />
-                  <h2 className="text-lg font-medium text-gray-900">General Settings</h2>
+                  <SettingsIcon className="h-6 w-6 text-muted-foreground" />
+                  <h2 className="text-lg font-medium text-foreground">General Settings</h2>
                 </div>
 
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                      <select
-                        value={generalSettings.currency}
-                        onChange={(e) => setGeneralSettings(prev => ({ ...prev, currency: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {currencies.map(currency => (
-                          <option key={currency.code} value={currency.code}>{currency.name}</option>
-                        ))}
-                      </select>
+                      <label className="block mb-2 text-sm font-medium text-foreground">
+                        <DollarSign className="w-4 h-4 inline mr-2" />
+                        Currency
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={generalSettings.currency}
+                          onChange={(e) => setGeneralSettings(prev => ({ ...prev, currency: e.target.value }))}
+                          className="apple-input w-full px-4 py-3 text-sm appearance-none cursor-pointer pr-10"
+                        >
+                          {currencies.map(currency => (
+                            <option key={currency.code} value={currency.code}>{currency.name}</option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <DollarSign className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1 flex items-center space-x-1">
+                        <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Display currency for amounts</span>
+                      </p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Theme</label>
-                      <select
-                        value={generalSettings.theme}
-                        onChange={(e) => setGeneralSettings(prev => ({ ...prev, theme: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                        <option value="system">System</option>
-                      </select>
+                      <label className="block mb-2 text-sm font-medium text-foreground">
+                        <Palette className="w-4 h-4 inline mr-2" />
+                        Theme & Color Scheme
+                      </label>
+                      <div className="space-y-4">
+                        <ThemeAndColorPicker />
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2 flex items-center space-x-1">
+                        <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Customize your visual experience</span>
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button onClick={saveGeneralSettings} disabled={loading}>
+                  <div className="flex justify-end pt-4 border-t border-border/50">
+                    <Button onClick={saveGeneralSettings} disabled={loading} className="px-6">
                       <Save className="h-4 w-4 mr-2" />
                       {loading ? 'Saving...' : 'Save Changes'}
                     </Button>
@@ -493,17 +891,96 @@ export default function SettingsPage() {
             {activeTab === 'data' && (
               <div className="p-6">
                 <div className="flex items-center space-x-3 mb-6">
-                  <Shield className="h-6 w-6 text-gray-400" />
-                  <h2 className="text-lg font-medium text-gray-900">Data & Privacy</h2>
+                  <Shield className="h-6 w-6 text-muted-foreground" />
+                  <h2 className="text-lg font-medium text-foreground">Data & Privacy</h2>
                 </div>
 
                 <div className="space-y-6">
+                  {/* Connected Accounts */}
+                  <div className="border border-border rounded-lg p-4">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-medium text-foreground">Connected Bank Accounts</h3>
+                      <p className="text-sm text-muted-foreground">Manage your connected financial accounts</p>
+                    </div>
+
+                    {(() => {
+                      if (loadingAccounts) {
+                        return (
+                          <div className="text-center py-4">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                            <p className="text-sm text-muted-foreground mt-2">Loading accounts...</p>
+                          </div>
+                        );
+                      } else if (bankAccounts.length > 0) {
+                        return (
+                          <div className="space-y-3">
+                            {bankAccounts.map((account) => (
+                              <div key={account.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium text-foreground">{account.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {account.type} • Balance: ${parseFloat(account.balance).toFixed(2)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => disconnectAccount(account.id, account.name)}
+                                >
+                                  Disconnect
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="text-center py-4">
+                            <CreditCard className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">No bank accounts connected</p>
+                            <p className="text-xs text-muted-foreground">Connect an account from the dashboard to manage it here</p>
+                          </div>
+                        );
+                      }
+                    })()}
+
+                    {/* Manual Sync Button */}
+                    {bankAccounts.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-sm font-medium text-foreground">Sync Transactions</h4>
+                            <p className="text-xs text-muted-foreground">Manually sync transactions from your connected accounts</p>
+                          </div>
+                          <Button
+                            onClick={syncTransactions}
+                            disabled={syncingTransactions}
+                            variant="outline"
+                            size="sm"
+                          >
+                            {syncingTransactions ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                                Syncing...
+                              </>
+                            ) : (
+                              'Sync Now'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Data Export */}
-                  <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="border border-border rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">Export Your Data</h3>
-                        <p className="text-sm text-gray-500">Download a copy of all your data</p>
+                        <h3 className="text-sm font-medium text-foreground">Export Your Data</h3>
+                        <p className="text-sm text-muted-foreground">Download a copy of all your data</p>
                       </div>
                       <Button onClick={exportData} variant="outline">
                         <Download className="h-4 w-4 mr-2" />
@@ -513,11 +990,11 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Data Import */}
-                  <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="border border-border rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">Import Data</h3>
-                        <p className="text-sm text-gray-500">Import transactions from CSV or other formats</p>
+                        <h3 className="text-sm font-medium text-foreground">Import Data</h3>
+                        <p className="text-sm text-muted-foreground">Import transactions from CSV or other formats</p>
                       </div>
                       <Button variant="outline">
                         <Upload className="h-4 w-4 mr-2" />

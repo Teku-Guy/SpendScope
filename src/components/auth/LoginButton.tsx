@@ -8,7 +8,7 @@ export default function LoginButton() {
   const { data: session, status } = useSession()
 
   if (status === 'loading') {
-    return <div className="animate-pulse bg-gray-200 h-10 w-24 rounded"></div>
+    return <div className="animate-pulse bg-muted h-10 w-24 rounded"></div>
   }
 
   if (session) {
@@ -16,7 +16,7 @@ export default function LoginButton() {
         <div className="flex items-center gap-4">
         <div className="text-sm">
           <p className="font-medium">{session.user?.name}</p>
-          <p className="text-gray-500">{session.user?.email}</p>
+          <p className="text-muted-foreground">{session.user?.email}</p>
         </div>
         <Button 
           onClick={() => signOut()} 
@@ -29,9 +29,9 @@ export default function LoginButton() {
   }
 
   return (
-    <Button 
+    <Button
       onClick={() => signIn('google')}
-      className="bg-blue-600 hover:bg-blue-700"
+      className="bg-primary hover:bg-primary/90"
     >
       Sign in with Google
     </Button>

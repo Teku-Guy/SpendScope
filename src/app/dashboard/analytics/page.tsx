@@ -146,9 +146,9 @@ export default function AnalyticsPage() {
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
-      case 'high': return 'text-red-600 bg-red-50'
-      case 'medium': return 'text-yellow-600 bg-yellow-50'
-      default: return 'text-green-600 bg-green-50'
+      case 'high': return 'text-destructive bg-destructive/10 border-destructive/20'
+      case 'medium': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+      default: return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
     }
   }
 
@@ -185,15 +185,15 @@ export default function AnalyticsPage() {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
+          <div className="h-8 bg-muted rounded w-48 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-gray-200 h-32 rounded-lg"></div>
+              <div key={i} className="bg-muted h-32 rounded-lg"></div>
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gray-200 h-96 rounded-lg"></div>
-            <div className="bg-gray-200 h-96 rounded-lg"></div>
+            <div className="bg-muted h-96 rounded-lg"></div>
+            <div className="bg-muted h-96 rounded-lg"></div>
           </div>
         </div>
       </div>
@@ -205,17 +205,17 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600">Comprehensive insights into your spending patterns</p>
+          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+          <p className="text-muted-foreground">Comprehensive insights into your spending patterns</p>
         </div>
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input-modern text-sm bg-background text-foreground"
           >
             {periods.map(period => (
-              <option key={period.value} value={period.value}>{period.label}</option>
+              <option key={period.value} value={period.value} className="bg-background text-foreground">{period.label}</option>
             ))}
           </select>
           <Button onClick={() => window.location.reload()} variant="outline">
@@ -230,17 +230,17 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Widget Visibility Controls */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="card-modern p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-900">Widget Visibility</h3>
+          <h3 className="text-sm font-medium text-foreground">Widget Visibility</h3>
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-500">Show/Hide widgets:</span>
+            <span className="text-xs text-muted-foreground">Show/Hide widgets:</span>
             {['overview', 'charts', 'forecast', 'insights'].map(widget => (
               <button
                 key={widget}
                 onClick={() => toggleWidget(widget)}
-                className={`flex items-center space-x-1 px-2 py-1 rounded text-xs ${
-                  isWidgetHidden(widget) ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-600'
+                className={`flex items-center space-x-1 px-2 py-1 rounded text-xs transition-colors ${
+                  isWidgetHidden(widget) ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'
                 }`}
               >
                 {isWidgetHidden(widget) ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
@@ -254,21 +254,21 @@ export default function AnalyticsPage() {
       {/* Overview Stats */}
       {!isWidgetHidden('overview') && analyticsData && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="card-modern p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <DollarSign className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <DollarSign className="h-6 w-6 text-primary" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Spent</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(analyticsData.totalSpent)}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(analyticsData.totalSpent)}</p>
                 <div className="flex items-center mt-1">
                   {analyticsData.monthlyGrowth >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-red-500" />
+                    <TrendingUp className="h-4 w-4 text-destructive" />
                   ) : (
-                    <TrendingDown className="h-4 w-4 text-green-500" />
+                    <TrendingDown className="h-4 w-4 text-emerald-500" />
                   )}
-                  <span className={`text-sm ml-1 ${analyticsData.monthlyGrowth >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span className={`text-sm ml-1 ${analyticsData.monthlyGrowth >= 0 ? 'text-destructive' : 'text-emerald-600'}`}>
                     {Math.abs(analyticsData.monthlyGrowth)}%
                   </span>
                 </div>
@@ -276,32 +276,32 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="card-modern p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <CreditCard className="h-6 w-6 text-green-600" />
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <CreditCard className="h-6 w-6 text-emerald-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">{analyticsData.totalTransactions}</p>
-                <p className="text-sm text-gray-500">{formatCurrency(analyticsData.averageTransaction)} avg</p>
+                <p className="text-sm font-medium text-muted-foreground">Transactions</p>
+                <p className="text-2xl font-bold text-foreground">{analyticsData.totalTransactions}</p>
+                <p className="text-sm text-muted-foreground">{formatCurrency(analyticsData.averageTransaction)} avg</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="card-modern p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-50 rounded-lg">
+              <div className="p-2 bg-yellow-500/10 rounded-lg">
                 <Target className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Budget Usage</p>
-                <p className="text-2xl font-bold text-gray-900">{analyticsData.budgetUtilization}%</p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <p className="text-sm font-medium text-muted-foreground">Budget Usage</p>
+                <p className="text-2xl font-bold text-foreground">{analyticsData.budgetUtilization}%</p>
+                <div className="w-full bg-muted rounded-full h-2 mt-2">
                   <div
                     className={`h-2 rounded-full ${
-                      analyticsData.budgetUtilization > 90 ? 'bg-red-500' :
-                      analyticsData.budgetUtilization > 70 ? 'bg-yellow-500' : 'bg-green-500'
+                      analyticsData.budgetUtilization > 90 ? 'bg-destructive' :
+                      analyticsData.budgetUtilization > 70 ? 'bg-yellow-500' : 'bg-emerald-500'
                     }`}
                     style={{ width: `${Math.min(analyticsData.budgetUtilization, 100)}%` }}
                   />
@@ -310,17 +310,17 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="card-modern p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-50 rounded-lg">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Savings Progress</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Savings Progress</p>
+                <p className="text-2xl font-bold text-foreground">
                   {((analyticsData.currentSavings / analyticsData.savingsGoal) * 100).toFixed(1)}%
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {formatCurrency(analyticsData.currentSavings)} of {formatCurrency(analyticsData.savingsGoal)}
                 </p>
               </div>
@@ -332,19 +332,19 @@ export default function AnalyticsPage() {
       {/* Charts Section */}
       {!isWidgetHidden('charts') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="p-4 border-b border-gray-200">
+          <div className="card-modern">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">Spending Trends</h3>
+                <h3 className="text-lg font-medium text-foreground">Spending Trends</h3>
                 <div className="flex items-center space-x-2">
                   <select
                     value={chartType}
                     onChange={(e) => setChartType(e.target.value as 'area' | 'bar' | 'line')}
-                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                    className="input-modern text-sm px-2 py-1 bg-background text-foreground"
                   >
-                    <option value="area">Area</option>
-                    <option value="bar">Bar</option>
-                    <option value="line">Line</option>
+                    <option value="area" className="bg-background text-foreground">Area</option>
+                    <option value="bar" className="bg-background text-foreground">Bar</option>
+                    <option value="line" className="bg-background text-foreground">Line</option>
                   </select>
                 </div>
               </div>
@@ -354,9 +354,9 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Category Breakdown</h3>
+          <div className="card-modern">
+            <div className="p-4 border-b border-border">
+              <h3 className="text-lg font-medium text-foreground">Category Breakdown</h3>
             </div>
             <div className="p-4">
               <CategoryBreakdown period={selectedPeriod} chartType="pie" />
@@ -367,11 +367,11 @@ export default function AnalyticsPage() {
 
       {/* Spending Forecast */}
       {!isWidgetHidden('forecast') && forecastData && (
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
+        <div className="card-modern">
+          <div className="p-6 border-b border-border">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">Spending Forecast</h3>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(forecastData.monthlyForecast.overallRiskLevel)}`}>
+              <h3 className="text-lg font-medium text-foreground">Spending Forecast</h3>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRiskColor(forecastData.monthlyForecast.overallRiskLevel)}`}>
                 {forecastData.monthlyForecast.overallRiskLevel.toUpperCase()} Risk
               </span>
             </div>
@@ -380,42 +380,42 @@ export default function AnalyticsPage() {
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">Current Spending</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Current Spending</p>
+                <p className="text-2xl font-bold text-foreground">
                   {formatCurrency(forecastData.monthlyForecast.totalCurrentSpending)}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">Forecasted Spending</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Forecasted Spending</p>
+                <p className="text-2xl font-bold text-foreground">
                   {formatCurrency(forecastData.monthlyForecast.totalForecastedSpending)}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">Categories at Risk</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-sm font-medium text-muted-foreground">Categories at Risk</p>
+                <p className="text-2xl font-bold text-destructive">
                   {forecastData.monthlyForecast.categoriesAtRisk}
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-900">Category Forecasts</h4>
+              <h4 className="text-sm font-medium text-foreground">Category Forecasts</h4>
               {forecastData.forecasts.slice(0, 5).map((forecast, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{forecast.category}</span>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(forecast.riskLevel)}`}>
+                      <span className="text-sm font-medium text-foreground">{forecast.category}</span>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getRiskColor(forecast.riskLevel)}`}>
                         {forecast.riskLevel}
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {formatCurrency(forecast.currentSpending)} → {formatCurrency(forecast.forecastedSpending)}
                       </span>
                       {forecast.budgetLimit && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           Budget: {formatCurrency(forecast.budgetLimit)}
                         </span>
                       )}
@@ -426,12 +426,12 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="mt-6">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Recommendations</h4>
+              <h4 className="text-sm font-medium text-foreground mb-3">Recommendations</h4>
               <ul className="space-y-2">
                 {forecastData.monthlyForecast.recommendations.map((recommendation, index) => (
                   <li key={index} className="flex items-start space-x-2">
                     <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">{recommendation}</span>
+                    <span className="text-sm text-muted-foreground">{recommendation}</span>
                   </li>
                 ))}
               </ul>
@@ -442,32 +442,32 @@ export default function AnalyticsPage() {
 
       {/* Monthly Trends */}
       {!isWidgetHidden('trends') && monthlyTrends.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Monthly Trends</h3>
+        <div className="card-modern">
+          <div className="p-6 border-b border-border">
+            <h3 className="text-lg font-medium text-foreground">Monthly Trends</h3>
           </div>
           <div className="p-6">
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 text-sm font-medium text-gray-500">Month</th>
-                    <th className="text-right py-2 text-sm font-medium text-gray-500">Spending</th>
-                    <th className="text-right py-2 text-sm font-medium text-gray-500">Income</th>
-                    <th className="text-right py-2 text-sm font-medium text-gray-500">Savings</th>
-                    <th className="text-right py-2 text-sm font-medium text-gray-500">Savings Rate</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 text-sm font-medium text-muted-foreground">Month</th>
+                    <th className="text-right py-2 text-sm font-medium text-muted-foreground">Spending</th>
+                    <th className="text-right py-2 text-sm font-medium text-muted-foreground">Income</th>
+                    <th className="text-right py-2 text-sm font-medium text-muted-foreground">Savings</th>
+                    <th className="text-right py-2 text-sm font-medium text-muted-foreground">Savings Rate</th>
                   </tr>
                 </thead>
                 <tbody>
                   {monthlyTrends.map((trend, index) => {
                     const savingsRate = trend.income > 0 ? (trend.savings / trend.income * 100) : 0
                     return (
-                      <tr key={index} className="border-b">
-                        <td className="py-3 text-sm font-medium text-gray-900">{trend.month}</td>
-                        <td className="py-3 text-sm text-right text-gray-900">{formatCurrency(trend.spending)}</td>
-                        <td className="py-3 text-sm text-right text-gray-900">{formatCurrency(trend.income)}</td>
-                        <td className="py-3 text-sm text-right text-gray-900">{formatCurrency(trend.savings)}</td>
-                        <td className={`py-3 text-sm text-right font-medium ${savingsRate >= 20 ? 'text-green-600' : savingsRate >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      <tr key={index} className="border-b border-border">
+                        <td className="py-3 text-sm font-medium text-foreground">{trend.month}</td>
+                        <td className="py-3 text-sm text-right text-foreground">{formatCurrency(trend.spending)}</td>
+                        <td className="py-3 text-sm text-right text-foreground">{formatCurrency(trend.income)}</td>
+                        <td className="py-3 text-sm text-right text-foreground">{formatCurrency(trend.savings)}</td>
+                        <td className={`py-3 text-sm text-right font-medium ${savingsRate >= 20 ? 'text-emerald-600' : savingsRate >= 10 ? 'text-yellow-600' : 'text-destructive'}`}>
                           {savingsRate.toFixed(1)}%
                         </td>
                       </tr>

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { PlusIcon, EditIcon, TrashIcon, TrendingUpIcon, TrendingDownIcon } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -20,6 +22,8 @@ interface Budget {
 }
 
 export default function BudgetsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -27,6 +31,7 @@ export default function BudgetsPage() {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const [creating, setCreating] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -47,9 +52,15 @@ export default function BudgetsPage() {
     { value: 'Other', label: 'Other' },
   ]
 
+  // Redirect to login if not authenticated
   useEffect(() => {
+    if (status === 'loading') return // Still loading
+    if (!session) {
+      router.push('/')
+      return
+    }
     fetchBudgets()
-  }, [])
+  }, [session, status, router])
 
   const fetchBudgets = async () => {
     try {
@@ -68,15 +79,27 @@ export default function BudgetsPage() {
   const handleCreateBudget = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
+    setError(null)
 
     try {
+      // Validate form data
+      if (!formData.name.trim()) {
+        throw new Error('Budget name is required')
+      }
+      if (!formData.category) {
+        throw new Error('Please select a category')
+      }
+      if (!formData.budgetLimit || parseFloat(formData.budgetLimit) <= 0) {
+        throw new Error('Budget limit must be greater than 0')
+      }
+
       const response = await fetch('/api/budgets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
+          name: formData.name.trim(),
           category: formData.category,
           budgetLimit: parseFloat(formData.budgetLimit),
         }),
@@ -84,16 +107,19 @@ export default function BudgetsPage() {
 
       const result = await response.json()
 
-      if (result.success) {
+      if (response.ok && result.success) {
+        // Add the new budget to the list with calculated fields
         setBudgets(prev => [...prev, result.budget])
         setShowCreateModal(false)
         setFormData({ name: '', category: '', budgetLimit: '' })
+        setError(null)
       } else {
-        alert(result.error || 'Failed to create budget')
+        const errorMessage = result.error || `Failed to create budget (${response.status})`
+        setError(errorMessage)
       }
     } catch (error) {
       console.error('Error creating budget:', error)
-      alert('Failed to create budget')
+      setError(error instanceof Error ? error.message : 'Failed to create budget')
     } finally {
       setCreating(false)
     }
@@ -104,15 +130,24 @@ export default function BudgetsPage() {
     if (!editingBudget) return
 
     setUpdating(true)
+    setError(null)
 
     try {
+      // Validate form data
+      if (!formData.name.trim()) {
+        throw new Error('Budget name is required')
+      }
+      if (!formData.budgetLimit || parseFloat(formData.budgetLimit) <= 0) {
+        throw new Error('Budget limit must be greater than 0')
+      }
+
       const response = await fetch(`/api/budgets/${editingBudget.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
+          name: formData.name.trim(),
           budgetLimit: parseFloat(formData.budgetLimit),
         }),
       })
@@ -126,12 +161,13 @@ export default function BudgetsPage() {
         setShowEditModal(false)
         setEditingBudget(null)
         setFormData({ name: '', category: '', budgetLimit: '' })
+        setError(null)
       } else {
-        alert(result.error || 'Failed to update budget')
+        setError(result.error || 'Failed to update budget')
       }
     } catch (error) {
       console.error('Error updating budget:', error)
-      alert('Failed to update budget')
+      setError(error instanceof Error ? error.message : 'Failed to update budget')
     } finally {
       setUpdating(false)
     }
@@ -165,33 +201,40 @@ export default function BudgetsPage() {
       category: budget.category,
       budgetLimit: budget.budgetLimit.toString(),
     })
+    setError(null)
     setShowEditModal(true)
   }
 
   const getBudgetStatusColor = (percentage: number) => {
-    if (percentage >= 100) return 'text-red-600 bg-red-50'
-    if (percentage >= 80) return 'text-yellow-600 bg-yellow-50'
-    return 'text-green-600 bg-green-50'
+    if (percentage >= 100) return 'text-destructive bg-destructive/10 border-destructive/20'
+    if (percentage >= 80) return 'text-yellow-600 bg-yellow-500/10 border-yellow-200'
+    return 'text-emerald-600 bg-emerald-500/10 border-emerald-200'
   }
 
   const getTrendIcon = (percentage: number) => {
     if (percentage >= 100) {
-      return <TrendingUpIcon className="h-5 w-5 text-red-500" />
+      return <TrendingUpIcon className="h-5 w-5 text-destructive" />
     }
-    return <TrendingDownIcon className="h-5 w-5 text-green-500" />
+    return <TrendingDownIcon className="h-5 w-5 text-emerald-500" />
   }
 
-  if (loading) {
+  // Show loading while checking authentication or loading data
+  if (status === 'loading' || loading) {
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
+          <div className="h-8 bg-muted rounded w-48 mb-6"></div>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-gray-200 h-32 rounded-lg mb-4"></div>
+            <div key={i} className="bg-muted h-32 rounded-lg mb-4"></div>
           ))}
         </div>
       </div>
     )
+  }
+
+  // Don't render anything if not authenticated (redirect is happening)
+  if (!session) {
+    return null
   }
 
   return (
@@ -199,8 +242,8 @@ export default function BudgetsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Budgets</h1>
-          <p className="text-gray-600">Manage your spending limits and track progress</p>
+          <h1 className="text-2xl font-bold text-foreground">Budgets</h1>
+          <p className="text-muted-foreground">Manage your spending limits and track progress</p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <PlusIcon className="h-4 w-4 mr-2" />
@@ -210,40 +253,40 @@ export default function BudgetsPage() {
 
       {/* Budget Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="card-modern p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <TrendingUpIcon className="h-6 w-6 text-blue-600" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <TrendingUpIcon className="h-6 w-6 text-primary" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Budgets</p>
-              <p className="text-2xl font-bold text-gray-900">{budgets.length}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Budgets</p>
+              <p className="text-2xl font-bold text-foreground">{budgets.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="card-modern p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <TrendingDownIcon className="h-6 w-6 text-green-600" />
+            <div className="p-2 bg-emerald-500/10 rounded-lg">
+              <TrendingDownIcon className="h-6 w-6 text-emerald-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">On Track</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">On Track</p>
+              <p className="text-2xl font-bold text-foreground">
                 {budgets.filter(b => b.percentage < 80).length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="card-modern p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-red-50 rounded-lg">
-              <TrendingUpIcon className="h-6 w-6 text-red-600" />
+            <div className="p-2 bg-destructive/10 rounded-lg">
+              <TrendingUpIcon className="h-6 w-6 text-destructive" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Over Budget</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-muted-foreground">Over Budget</p>
+              <p className="text-2xl font-bold text-foreground">
                 {budgets.filter(b => b.percentage >= 100).length}
               </p>
             </div>
@@ -253,35 +296,35 @@ export default function BudgetsPage() {
 
       {/* Budget List */}
       {budgets.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <TrendingUpIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No budgets yet</h3>
-          <p className="text-gray-500 mb-4">Create your first budget to start tracking your spending</p>
+        <div className="text-center py-12 bg-muted/30 rounded-lg">
+          <TrendingUpIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No budgets yet</h3>
+          <p className="text-muted-foreground mb-4">Create your first budget to start tracking your spending</p>
           <Button onClick={() => setShowCreateModal(true)}>
             Create Budget
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Your Budgets</h3>
+        <div className="card-modern overflow-hidden">
+          <div className="px-6 py-4 border-b border-border">
+            <h3 className="text-lg font-medium text-foreground">Your Budgets</h3>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-border">
             {budgets.map((budget) => (
               <div key={budget.id} className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div>
-                      <h4 className="text-lg font-medium text-gray-900">{budget.name}</h4>
-                      <p className="text-sm text-gray-500">{budget.category}</p>
+                      <h4 className="text-lg font-medium text-foreground">{budget.name}</h4>
+                      <p className="text-sm text-muted-foreground">{budget.category}</p>
                     </div>
                     {getTrendIcon(budget.percentage)}
                   </div>
 
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">Spent / Budget</p>
-                      <p className="text-lg font-semibold text-gray-900">
+                      <p className="text-sm text-muted-foreground">Spent / Budget</p>
+                      <p className="text-lg font-semibold text-foreground">
                         ${budget.currentSpend.toFixed(2)} / ${budget.budgetLimit.toFixed(2)}
                       </p>
                     </div>
@@ -303,19 +346,19 @@ export default function BudgetsPage() {
 
                 <div className="mt-4">
                   <div className="flex justify-between text-sm mb-2">
-                    <span className={`font-medium px-2 py-1 rounded-full ${getBudgetStatusColor(budget.percentage)}`}>
+                    <span className={`font-medium px-2 py-1 rounded-full border ${getBudgetStatusColor(budget.percentage)}`}>
                       {budget.percentage.toFixed(1)}% used
                     </span>
-                    <span className={`font-medium ${budget.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <span className={`font-medium ${budget.remaining < 0 ? 'text-destructive' : 'text-emerald-600'}`}>
                       ${Math.abs(budget.remaining).toFixed(2)} {budget.remaining < 0 ? 'over' : 'remaining'}
                     </span>
                   </div>
 
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-muted rounded-full h-3">
                     <div
                       className={`h-3 rounded-full transition-all duration-300 ${
-                        budget.percentage >= 100 ? 'bg-red-500' :
-                        budget.percentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                        budget.percentage >= 100 ? 'bg-destructive' :
+                        budget.percentage >= 80 ? 'bg-yellow-500' : 'bg-emerald-500'
                       }`}
                       style={{ width: `${Math.min(budget.percentage, 100)}%` }}
                     ></div>
@@ -330,48 +373,89 @@ export default function BudgetsPage() {
       {/* Create Budget Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => {
+          setShowCreateModal(false)
+          setError(null)
+          setFormData({ name: '', category: '', budgetLimit: '' })
+        }}
         title="Create New Budget"
+        size="md"
       >
-        <form onSubmit={handleCreateBudget} className="space-y-4">
+        <form onSubmit={handleCreateBudget} className="space-y-5">
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              </div>
+            </div>
+          )}
+
           <Input
             label="Budget Name"
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="e.g., Monthly Groceries"
+            placeholder="e.g., Monthly Groceries, Entertainment"
             required
+            helper="Give your budget a descriptive name"
           />
 
           <Select
             label="Category"
             value={formData.category}
             onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-            options={categories}
+            options={[
+              { value: '', label: 'Select a category' },
+              ...categories
+            ]}
             required
+            helper="Choose the spending category this budget will track"
           />
 
           <Input
-            label="Budget Limit ($)"
+            label="Budget Limit"
             type="number"
             step="0.01"
-            min="0"
+            min="0.01"
             value={formData.budgetLimit}
             onChange={(e) => setFormData(prev => ({ ...prev, budgetLimit: e.target.value }))}
-            placeholder="0.00"
+            placeholder="500.00"
             required
+            helper="Set your monthly spending limit for this category"
+            icon={
+              <span className="text-muted-foreground font-medium">$</span>
+            }
           />
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-border">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowCreateModal(false)}
+              onClick={() => {
+                setShowCreateModal(false)
+                setError(null)
+                setFormData({ name: '', category: '', budgetLimit: '' })
+              }}
               disabled={creating}
+              className="min-w-[80px]"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={creating}>
-              {creating ? 'Creating...' : 'Create Budget'}
+            <Button
+              type="submit"
+              disabled={creating || !formData.name.trim() || !formData.category || !formData.budgetLimit}
+              className="min-w-[120px]"
+            >
+              {creating ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>Creating...</span>
+                </div>
+              ) : (
+                'Create Budget'
+              )}
             </Button>
           </div>
         </form>
@@ -380,47 +464,92 @@ export default function BudgetsPage() {
       {/* Edit Budget Modal */}
       <Modal
         isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
+        onClose={() => {
+          setShowEditModal(false)
+          setEditingBudget(null)
+          setError(null)
+          setFormData({ name: '', category: '', budgetLimit: '' })
+        }}
         title="Edit Budget"
+        size="md"
       >
-        <form onSubmit={handleEditBudget} className="space-y-4">
+        <form onSubmit={handleEditBudget} className="space-y-5">
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              </div>
+            </div>
+          )}
+
           <Input
             label="Budget Name"
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="e.g., Monthly Groceries"
+            placeholder="e.g., Monthly Groceries, Entertainment"
             required
+            helper="Update your budget name"
           />
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Category</label>
-            <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
-              {formData.category}
+            <label className="block text-sm font-medium text-foreground">Category</label>
+            <div className="flex items-center space-x-3 text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl border border-border/30">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span className="font-medium">{formData.category}</span>
             </div>
-            <p className="text-xs text-gray-500">Category cannot be changed after creation</p>
+            <p className="text-xs text-muted-foreground flex items-center space-x-1">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.08 15.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span>Category cannot be changed after creation</span>
+            </p>
           </div>
 
           <Input
-            label="Budget Limit ($)"
+            label="Budget Limit"
             type="number"
             step="0.01"
-            min="0"
+            min="0.01"
             value={formData.budgetLimit}
             onChange={(e) => setFormData(prev => ({ ...prev, budgetLimit: e.target.value }))}
             required
+            helper="Update your monthly spending limit for this category"
+            icon={
+              <span className="text-muted-foreground font-medium">$</span>
+            }
           />
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-border">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false)
+                setEditingBudget(null)
+                setError(null)
+                setFormData({ name: '', category: '', budgetLimit: '' })
+              }}
               disabled={updating}
+              className="min-w-[80px]"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={updating}>
-              {updating ? 'Updating...' : 'Update Budget'}
+            <Button
+              type="submit"
+              disabled={updating || !formData.name.trim() || !formData.budgetLimit}
+              className="min-w-[120px]"
+            >
+              {updating ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>Updating...</span>
+                </div>
+              ) : (
+                'Update Budget'
+              )}
             </Button>
           </div>
         </form>

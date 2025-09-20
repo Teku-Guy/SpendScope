@@ -21,13 +21,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="apple-card p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Welcome to SpendScope
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             See your spending before it happens
           </p>
         </div>
@@ -35,7 +35,7 @@ export default function LoginPage() {
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-3 bg-background border border-border rounded-xl px-4 py-3 text-foreground hover:bg-accent transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md"
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -46,7 +46,7 @@ export default function LoginPage() {
           {isLoading ? 'Signing in...' : 'Continue with Google'}
         </button>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           By continuing, you agree to our Terms of Service and Privacy Policy
         </div>
       </div>

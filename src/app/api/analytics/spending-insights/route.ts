@@ -16,7 +16,7 @@ interface SpendingInsight {
 }
 
 interface MerchantPattern {
-  merchant_name: string;
+  merchantName: string;
   frequency: string;
   avg_amount: string;
   category: string;
@@ -83,15 +83,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // 2. Identify frequent merchants
     const merchantPatterns = await prisma.$queryRaw<MerchantPattern[]>`
       SELECT
-        merchant_name,
+        "merchantName",
         COUNT(*) as frequency,
         AVG(amount) as avg_amount,
         category
       FROM transactions
       WHERE "userId" = ${session.user.id}
-        AND merchant_name IS NOT NULL
+        AND "merchantName" IS NOT NULL
         AND date >= ${currentMonthStart}
-      GROUP BY merchant_name, category
+      GROUP BY "merchantName", category
       HAVING COUNT(*) >= 3
       ORDER BY frequency DESC, avg_amount DESC
       LIMIT 5
@@ -106,8 +106,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       if (monthlyEstimate > 200) {
         insights.push({
           type: 'trend',
-          title: `Frequent ${pattern.merchant_name} Visits`,
-          description: `You've visited ${pattern.merchant_name} ${frequency} times this month, spending an average of $${avgAmount.toFixed(2)} per visit`,
+          title: `Frequent ${pattern.merchantName} Visits`,
+          description: `You've visited ${pattern.merchantName} ${frequency} times this month, spending an average of $${avgAmount.toFixed(2)} per visit`,
           impact: monthlyEstimate > 500 ? 'high' : 'medium',
           category: pattern.category,
           amount: monthlyEstimate,
@@ -122,9 +122,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       category: string;
       name: string;
       date: Date;
-      merchant_name: string | null;
+      merchantName: string | null;
     }[]>`
-      SELECT amount, category, name, date, merchant_name
+      SELECT amount, category, name, date, "merchantName"
       FROM transactions
       WHERE "userId" = ${session.user.id}
         AND date >= ${currentMonthStart}
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       insights.push({
         type: 'anomaly',
         title: `Large ${transaction.category} Purchase`,
-        description: `Unusual ${amount > 1000 ? 'large' : 'significant'} transaction of $${amount.toFixed(2)} at ${transaction.merchant_name || transaction.name}`,
+        description: `Unusual ${amount > 1000 ? 'large' : 'significant'} transaction of $${amount.toFixed(2)} at ${transaction.merchantName || transaction.name}`,
         impact: amount > 1000 ? 'high' : 'medium',
         category: transaction.category,
         amount,

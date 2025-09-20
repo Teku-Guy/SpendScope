@@ -23,6 +23,27 @@ export async function POST(request: NextRequest) {
 
     const { access_token, item_id } = exchangeResponse.data;
 
+    // Check if this item is already connected
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        plaidItemId: item_id,
+      },
+    });
+
+    let isExistingConnection = false;
+    if (existingUser) {
+      if (existingUser.id === session.user.id) {
+        // Same user reconnecting - this is a refresh
+        isExistingConnection = true;
+        console.log('Existing connection detected - refreshing data');
+      } else {
+        // Different user trying to connect the same bank account
+        return NextResponse.json({
+          error: 'This bank account is already connected to another user',
+        }, { status: 409 });
+      }
+    }
+
     // Update user with Plaid tokens
     await prisma.user.update({
       where: { id: session.user.id },
@@ -84,6 +105,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       accounts: accounts.length,
+      isExistingConnection,
+      message: isExistingConnection
+        ? 'Bank account refreshed successfully'
+        : 'Bank account connected successfully',
     });
   } catch (error) {
     console.error('Error exchanging public token:', error);

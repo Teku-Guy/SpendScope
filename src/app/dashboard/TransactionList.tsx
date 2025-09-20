@@ -20,17 +20,23 @@ interface Transaction {
 interface TransactionListProps {
   limit?: number
   showFilters?: boolean
+  enablePagination?: boolean
 }
 
 export default function TransactionList({
   limit,
-  showFilters = true
+  showFilters = true,
+  enablePagination = false
 }: TransactionListProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [dateRange, setDateRange] = useState('30')
+  const [offset, setOffset] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
 
   const categories = [
     'all',
@@ -43,31 +49,56 @@ export default function TransactionList({
     'Other'
   ]
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const params = new URLSearchParams()
+  const fetchData = async (isLoadMore = false) => {
+    try {
+      const currentOffset = isLoadMore ? offset : 0
+      const params = new URLSearchParams()
 
-        if (limit) params.append('limit', limit.toString())
-        if (selectedCategory !== 'all') params.append('category', selectedCategory)
-        if (dateRange) params.append('days', dateRange)
-        if (searchTerm) params.append('search', searchTerm)
+      if (limit && !enablePagination) params.append('limit', limit.toString())
+      else if (enablePagination) params.append('limit', '20')
 
-        const response = await fetch(`/api/transactions?${params.toString()}`)
-        const data = await response.json()
+      params.append('offset', currentOffset.toString())
+      if (selectedCategory !== 'all') params.append('category', selectedCategory)
+      if (dateRange) params.append('days', dateRange)
+      if (searchTerm) params.append('search', searchTerm)
 
-        if (data.success) {
+      const response = await fetch(`/api/transactions?${params.toString()}`)
+      const data = await response.json()
+
+      if (data.success) {
+        if (isLoadMore) {
+          setTransactions(prev => [...prev, ...data.transactions])
+        } else {
           setTransactions(data.transactions)
+          setOffset(0)
         }
-      } catch (error) {
-        console.error('Error fetching transactions:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
 
+        if (data.pagination) {
+          setHasMore(data.pagination.hasMore)
+          setTotalCount(data.pagination.total)
+          if (isLoadMore) {
+            setOffset(prev => prev + data.pagination.limit)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true)
     fetchData()
-  }, [searchTerm, selectedCategory, dateRange, limit])
+  }, [searchTerm, selectedCategory, dateRange, limit, enablePagination])
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore) return
+    setLoadingMore(true)
+    await fetchData(true)
+  }
 
 
   const formatCurrency = (amount: number) => {
@@ -79,25 +110,25 @@ export default function TransactionList({
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      'Food and Drink': 'bg-orange-100 text-orange-800',
-      'Transportation': 'bg-blue-100 text-blue-800',
-      'Shopping': 'bg-purple-100 text-purple-800',
-      'Entertainment': 'bg-pink-100 text-pink-800',
-      'Bills': 'bg-red-100 text-red-800',
-      'Healthcare': 'bg-green-100 text-green-800',
-      'Other': 'bg-gray-100 text-gray-800'
+      'Food and Drink': 'bg-amber-500/10 text-amber-700 border-amber-200',
+      'Transportation': 'bg-blue-500/10 text-blue-700 border-blue-200',
+      'Shopping': 'bg-purple-500/10 text-purple-700 border-purple-200',
+      'Entertainment': 'bg-pink-500/10 text-pink-700 border-pink-200',
+      'Bills': 'bg-destructive/10 text-destructive border-destructive/20',
+      'Healthcare': 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
+      'Other': 'bg-muted text-muted-foreground border-border'
     }
-    return colors[category] || 'bg-gray-100 text-gray-800'
+    return colors[category] || 'bg-muted text-muted-foreground border-border'
   }
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card-modern p-6">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4" />
+          <div className="h-4 bg-muted rounded w-1/4 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded" />
+              <div key={i} className="h-16 bg-muted rounded-lg" />
             ))}
           </div>
         </div>
@@ -106,10 +137,10 @@ export default function TransactionList({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200">
+    <div className="card-modern">
+      <div className="p-6 border-b border-border">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg font-semibold text-foreground">
             Recent Transactions
           </h3>
 
@@ -117,13 +148,13 @@ export default function TransactionList({
             <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <input
                   type="text"
                   placeholder="Search transactions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input-modern pl-10 text-sm min-w-[200px]"
                 />
               </div>
 
@@ -131,7 +162,7 @@ export default function TransactionList({
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-modern text-sm min-w-[140px]"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
@@ -144,7 +175,7 @@ export default function TransactionList({
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-modern text-sm min-w-[130px]"
               >
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
@@ -156,35 +187,35 @@ export default function TransactionList({
         </div>
       </div>
 
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-border">
         {transactions.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-muted-foreground">
             No transactions found. Try adjusting your filters or connect a bank account.
           </div>
         ) : (
           transactions.map((transaction) => (
-            <div key={transaction.id} className="p-6 hover:bg-gray-50">
+            <div key={transaction.id} className="p-6 hover:bg-accent/50 transition-colors duration-200">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {transaction.merchantName || transaction.name}
                     </p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-semibold text-destructive">
                       -{formatCurrency(transaction.amount)}
                     </p>
                   </div>
 
-                  <div className="mt-1 flex items-center justify-between">
+                  <div className="mt-2 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(transaction.category)}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getCategoryColor(transaction.category)}`}>
                         {transaction.category}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground font-medium">
                         {transaction.account.name}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground font-medium">
                       {format(new Date(transaction.date), 'MMM d, yyyy')}
                     </p>
                   </div>
@@ -195,14 +226,33 @@ export default function TransactionList({
         )}
       </div>
 
-      {limit && transactions.length >= limit && (
-        <div className="p-4 border-t border-gray-200 text-center">
+      {/* Pagination or View All */}
+      {enablePagination && hasMore && (
+        <div className="p-4 border-t border-border text-center">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="btn-minimal btn-primary disabled:opacity-50"
+          >
+            {loadingMore ? 'Loading...' : `Load More (${totalCount - transactions.length} remaining)`}
+          </button>
+        </div>
+      )}
+
+      {limit && !enablePagination && transactions.length >= limit && (
+        <div className="p-4 border-t border-border text-center">
           <button
             onClick={() => window.location.href = '/dashboard/transactions'}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="text-primary hover:text-primary/80 text-sm font-medium transition-colors duration-200 hover:underline"
           >
             View all transactions →
           </button>
+        </div>
+      )}
+
+      {enablePagination && transactions.length > 0 && (
+        <div className="p-4 border-t border-border text-center text-sm text-muted-foreground">
+          Showing {transactions.length} of {totalCount} transactions
         </div>
       )}
     </div>

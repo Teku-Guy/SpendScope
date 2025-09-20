@@ -14,13 +14,13 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-0 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:scale-[0.98]';
 
   const variantClasses = {
-    default: 'bg-blue-600 text-white hover:bg-blue-700',
-    outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
-    ghost: 'text-gray-700 hover:bg-gray-100',
-    destructive: 'bg-red-600 text-white hover:bg-red-700'
+    default: 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg',
+    outline: 'border border-border/50 bg-card/50 backdrop-blur-sm text-foreground hover:bg-accent/70 hover:border-border',
+    ghost: 'text-foreground hover:bg-accent/70 hover:backdrop-blur-sm',
+    destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg'
   };
 
   const sizeClasses = {

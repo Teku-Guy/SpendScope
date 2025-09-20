@@ -57,10 +57,13 @@ export default function SpendingInsights() {
   }, [])
 
   const getInsightIcon = (type: string, impact: string) => {
-    const iconClasses = `h-5 w-5 ${
-      impact === 'high' ? 'text-red-500' :
-      impact === 'medium' ? 'text-yellow-500' : 'text-blue-500'
-    }`
+    let colorClass = 'text-primary'
+    if (impact === 'high') {
+      colorClass = 'text-destructive'
+    } else if (impact === 'medium') {
+      colorClass = 'text-amber-500'
+    }
+    const iconClasses = `h-5 w-5 ${colorClass}`
 
     switch (type) {
       case 'warning':
@@ -78,11 +81,11 @@ export default function SpendingInsights() {
 
   const getInsightBorderColor = (type: string, impact: string) => {
     if (impact === 'high') {
-      return type === 'warning' || type === 'anomaly' ? 'border-l-red-500' : 'border-l-orange-500'
+      return type === 'warning' || type === 'anomaly' ? 'border-l-destructive' : 'border-l-amber-500'
     } else if (impact === 'medium') {
-      return 'border-l-yellow-500'
+      return 'border-l-amber-500'
     }
-    return 'border-l-blue-500'
+    return 'border-l-primary'
   }
 
   const formatCurrency = (amount: number) => {
@@ -94,12 +97,12 @@ export default function SpendingInsights() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card-modern p-6">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4" />
+          <div className="h-6 bg-muted rounded w-1/3 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded" />
+              <div key={i} className="h-16 bg-muted rounded-lg" />
             ))}
           </div>
         </div>
@@ -109,12 +112,12 @@ export default function SpendingInsights() {
 
   if (!data || data.insights.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Spending Insights</h3>
+      <div className="card-modern p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Spending Insights</h3>
         <div className="text-center py-8">
-          <CheckCircleIcon className="h-12 w-12 text-green-500 mx-auto mb-4" />
-          <p className="text-gray-500">Great! No significant insights to report.</p>
-          <p className="text-sm text-gray-400 mt-2">Your spending patterns look healthy.</p>
+          <CheckCircleIcon className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
+          <p className="text-muted-foreground">Great! No significant insights to report.</p>
+          <p className="text-sm text-muted-foreground/80 mt-2">Your spending patterns look healthy.</p>
         </div>
       </div>
     )
@@ -123,20 +126,20 @@ export default function SpendingInsights() {
   const displayedInsights = showAll ? data.insights : data.insights.slice(0, 5)
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200">
+    <div className="card-modern">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">Spending Insights</h3>
-          <div className="flex items-center space-x-4 text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-foreground">Spending Insights</h3>
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             {data.summary.warnings > 0 && (
               <span className="flex items-center">
-                <AlertTriangleIcon className="h-4 w-4 text-red-500 mr-1" />
+                <AlertTriangleIcon className="h-4 w-4 text-destructive mr-1" />
                 {data.summary.warnings} warnings
               </span>
             )}
             {data.summary.opportunities > 0 && (
               <span className="flex items-center">
-                <LightbulbIcon className="h-4 w-4 text-blue-500 mr-1" />
+                <LightbulbIcon className="h-4 w-4 text-primary mr-1" />
                 {data.summary.opportunities} opportunities
               </span>
             )}
@@ -146,10 +149,10 @@ export default function SpendingInsights() {
 
       <div className="p-6">
         <div className="space-y-4">
-          {displayedInsights.map((insight, index) => (
+          {displayedInsights.map((insight) => (
             <div
-              key={index}
-              className={`p-4 border-l-4 rounded-r-lg bg-gray-50 ${getInsightBorderColor(insight.type, insight.impact)}`}
+              key={insight.title + '-' + insight.type}
+              className={`p-4 border-l-4 rounded-r-lg bg-accent/30 ${getInsightBorderColor(insight.type, insight.impact)} hover:bg-accent/50 transition-colors duration-200`}
             >
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 mt-1">
@@ -157,32 +160,32 @@ export default function SpendingInsights() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-gray-900">
+                    <h4 className="text-sm font-medium text-foreground">
                       {insight.title}
                     </h4>
                     {insight.amount && (
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-semibold text-foreground">
                         {formatCurrency(insight.amount)}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {insight.description}
                   </p>
                   {insight.recommendation && (
-                    <p className="text-xs text-gray-500 mt-2 italic">
+                    <p className="text-xs text-muted-foreground mt-2 italic bg-muted/50 p-2 rounded border border-border/50">
                       💡 {insight.recommendation}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center justify-between mt-3">
                     {insight.category && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                         {insight.category}
                       </span>
                     )}
                     {insight.percentage && (
                       <span className={`text-xs font-medium ${
-                        insight.percentage > 0 ? 'text-red-600' : 'text-green-600'
+                        insight.percentage > 0 ? 'text-destructive' : 'text-emerald-600'
                       }`}>
                         {insight.percentage > 0 ? '+' : ''}{insight.percentage.toFixed(1)}%
                       </span>
@@ -198,7 +201,7 @@ export default function SpendingInsights() {
           <div className="mt-6 text-center">
             <button
               onClick={() => setShowAll(!showAll)}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="text-sm text-primary hover:text-primary/80 font-medium transition-colors duration-200 hover:underline"
             >
               {showAll ? 'Show Less' : `Show All ${data.insights.length} Insights`}
             </button>

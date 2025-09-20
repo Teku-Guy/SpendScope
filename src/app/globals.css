@@ -1,26 +1,400 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Light theme - High contrast, clean whites */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #475569;
+  --color-border: #d1d5db;
+  --color-input: #f9fafb;
+  --color-accent: #f8fafc;
+  --color-accent-foreground: #0f172a;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-ring: #0f172a;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+
+  --radius: 0.75rem;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Fira Code', monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Blue Theme */
+.theme-blue {
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-900: #1e3a8a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Emerald Theme */
+.theme-emerald {
+  --color-primary: #10b981;
+  --color-primary-foreground: #ffffff;
+  --color-primary-50: #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-900: #064e3b;
+}
+
+/* Purple Theme */
+.theme-purple {
+  --color-primary: #8b5cf6;
+  --color-primary-foreground: #ffffff;
+  --color-primary-50: #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-900: #4c1d95;
+}
+
+/* Rose Theme */
+.theme-rose {
+  --color-primary: #f43f5e;
+  --color-primary-foreground: #ffffff;
+  --color-primary-50: #fff1f2;
+  --color-primary-100: #ffe4e6;
+  --color-primary-500: #f43f5e;
+  --color-primary-600: #e11d48;
+  --color-primary-700: #be185d;
+  --color-primary-900: #881337;
+}
+
+/* Amber Theme */
+.theme-amber {
+  --color-primary: #f59e0b;
+  --color-primary-foreground: #ffffff;
+  --color-primary-50: #fffbeb;
+  --color-primary-100: #fef3c7;
+  --color-primary-500: #f59e0b;
+  --color-primary-600: #d97706;
+  --color-primary-700: #b45309;
+  --color-primary-900: #78350f;
+}
+
+/* Slate Theme */
+.theme-slate {
+  --color-primary: #64748b;
+  --color-primary-foreground: #ffffff;
+  --color-primary-50: #f8fafc;
+  --color-primary-100: #f1f5f9;
+  --color-primary-500: #64748b;
+  --color-primary-600: #475569;
+  --color-primary-700: #334155;
+  --color-primary-900: #0f172a;
+}
+
+/* Dark mode overrides - Apple-inspired comfortable dark theme */
+.dark {
+  --color-background: #000000;
+  --color-foreground: #f5f5f7;
+  --color-card: #1c1c1e;
+  --color-card-foreground: #f5f5f7;
+  --color-popover: #2c2c2e;
+  --color-popover-foreground: #f5f5f7;
+  --color-muted: #1c1c1e;
+  --color-muted-foreground: #8e8e93;
+  --color-border: #38383a;
+  --color-input: #1c1c1e;
+  --color-accent: #2c2c2e;
+  --color-accent-foreground: #f5f5f7;
+  --color-destructive: #ff453a;
+  --color-destructive-foreground: #ffffff;
+  --color-ring: #0a84ff;
+  --color-secondary: #2c2c2e;
+  --color-secondary-foreground: #f5f5f7;
+}
+
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Modern scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-muted);
+  opacity: 0.2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted-foreground);
+  opacity: 0.2;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  opacity: 0.3;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-muted-foreground) 20%, transparent) color-mix(in srgb, var(--color-muted) 20%, transparent);
+}
+
+/* Selection styling */
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: var(--color-foreground);
+}
+
+/* Focus ring utility */
+.focus-ring {
+  outline: none;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+/* Glass morphism utility */
+.glass {
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+/* Modern card styling - Apple inspired */
+.card-modern {
+  background: var(--color-card);
+  color: var(--color-card-foreground);
+  border: 1px solid color-mix(in srgb, var(--color-border) 30%, transparent);
+  border-radius: calc(var(--radius) * 1.2);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 4px 15px rgba(0, 0, 0, 0.05),
+    0 7px 25px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(10px);
+  transition: all 200ms ease-out;
+}
+
+.card-modern:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.07),
+    0 8px 25px rgba(0, 0, 0, 0.07),
+    0 15px 40px rgba(0, 0, 0, 0.05);
+}
+
+/* Minimal button styling */
+.btn-minimal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--radius) * 0.75);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms ease-in-out;
+  cursor: pointer;
+  border: none;
+  padding: 0.5rem 1rem;
+}
+
+.btn-minimal:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.btn-minimal:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--color-primary) 90%, black);
+}
+
+.btn-primary:active {
+  background: color-mix(in srgb, var(--color-primary) 80%, black);
+}
+
+.btn-secondary {
+  background: var(--color-secondary);
+  color: var(--color-secondary-foreground);
+}
+
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--color-secondary) 80%, black);
+}
+
+.btn-ghost:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.btn-outline {
+  border: 1px solid var(--color-input);
+  background: var(--color-background);
+}
+
+.btn-outline:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+/* Input styling */
+.input-modern {
+  display: flex;
+  width: 100%;
+  border-radius: calc(var(--radius) * 0.75);
+  border: 1px solid var(--color-input);
+  background: var(--color-background);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 200ms ease-in-out;
+}
+
+.input-modern::placeholder {
+  color: var(--color-muted-foreground);
+}
+
+.input-modern:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-color: var(--color-primary);
+}
+
+.input-modern:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes bounceSubtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-bounce-subtle {
+  animation: bounceSubtle 0.6s ease-in-out;
+}
+
+/* Gradient utilities */
+.gradient-subtle {
+  background: linear-gradient(135deg, var(--color-background), color-mix(in srgb, var(--color-muted) 30%, transparent));
+}
+
+.gradient-primary {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 10%, transparent), color-mix(in srgb, var(--color-primary) 5%, transparent), transparent);
+}
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, transparent));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Modern shadows */
+.shadow-soft {
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-medium {
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-hard {
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 20px 50px -10px rgba(0, 0, 0, 0.1);
+}
+
+/* Apple-inspired utilities */
+.apple-blur {
+  backdrop-filter: blur(20px) saturate(180%);
+  background: color-mix(in srgb, var(--color-background) 70%, transparent);
+}
+
+.apple-card {
+  background: var(--color-card);
+  border: 1px solid color-mix(in srgb, var(--color-border) 20%, transparent);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.03);
+  transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.apple-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.06),
+    0 16px 32px rgba(0, 0, 0, 0.04);
+}
+
+.apple-button {
+  border-radius: 12px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  transition: all 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+.apple-input {
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  background: color-mix(in srgb, var(--color-background) 90%, transparent);
+  backdrop-filter: blur(10px);
+  transition: all 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.apple-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
