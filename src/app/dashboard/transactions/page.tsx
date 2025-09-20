@@ -196,15 +196,15 @@ export default function TransactionsPage() {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      'Food and Drink': 'bg-amber-500/10 text-amber-700 border-amber-200',
-      'Transportation': 'bg-blue-500/10 text-blue-700 border-blue-200',
-      'Shopping': 'bg-purple-500/10 text-purple-700 border-purple-200',
-      'Entertainment': 'bg-pink-500/10 text-pink-700 border-pink-200',
+      'Food and Drink': 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+      'Transportation': 'bg-blue-500/10 text-blue-700 border-blue-500/20',
+      'Shopping': 'bg-purple-500/10 text-purple-700 border-purple-500/20',
+      'Entertainment': 'bg-pink-500/10 text-pink-700 border-pink-500/20',
       'Bills': 'bg-destructive/10 text-destructive border-destructive/20',
-      'Healthcare': 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
-      'Travel': 'bg-indigo-500/10 text-indigo-700 border-indigo-200',
-      'Education': 'bg-yellow-500/10 text-yellow-700 border-yellow-200',
-      'Personal Care': 'bg-cyan-500/10 text-cyan-700 border-cyan-200',
+      'Healthcare': 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+      'Travel': 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20',
+      'Education': 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+      'Personal Care': 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20',
       'Other': 'bg-muted text-muted-foreground border-border'
     }
     return colors[category] || 'bg-muted text-muted-foreground border-border'
@@ -273,7 +273,7 @@ export default function TransactionsPage() {
           <div className="h-8 bg-muted rounded w-48 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-muted h-24 rounded-lg"></div>
+              <div key={`loading-transaction-${i}`} className="bg-muted h-24 rounded-lg"></div>
             ))}
           </div>
           <div className="bg-muted h-96 rounded-lg"></div>
@@ -454,7 +454,7 @@ export default function TransactionsPage() {
                       type="checkbox"
                       checked={selectedTransactions.size === transactions.length && transactions.length > 0}
                       onChange={selectAllTransactions}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-border text-primary focus:ring-primary/20"
                     />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -481,16 +481,16 @@ export default function TransactionsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Account
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     <button
                       onClick={() => handleSort('amount')}
-                      className="flex items-center space-x-1 hover:text-gray-700 ml-auto"
+                      className="flex items-center space-x-1 hover:text-foreground ml-auto"
                     >
                       <span>Amount</span>
                       <SortIcon field="amount" />
                     </button>
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -503,7 +503,7 @@ export default function TransactionsPage() {
                         type="checkbox"
                         checked={selectedTransactions.has(transaction.id)}
                         onChange={() => toggleTransactionSelection(transaction.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-border text-primary focus:ring-primary/20"
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">

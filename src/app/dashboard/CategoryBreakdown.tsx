@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface CategoryData {
   category: string
@@ -25,6 +26,21 @@ export default function CategoryBreakdown({
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState(period)
   const [selectedChart, setSelectedChart] = useState(chartType)
+  const { actualTheme } = useTheme()
+
+  // Get theme-aware colors
+  const getThemeColors = () => {
+    const isDark = actualTheme === 'dark'
+    return {
+      text: isDark ? '#f9fafb' : '#111827',
+      textMuted: isDark ? '#9ca3af' : '#6b7280',
+      border: isDark ? '#374151' : '#e5e7eb',
+      background: isDark ? '#1f2937' : '#ffffff',
+      gridLines: isDark ? '#374151' : '#f3f4f6'
+    }
+  }
+
+  const themeColors = getThemeColors()
 
   // Category colors for consistent theming - memoized to prevent useEffect dependency issues
   const categoryColors = useMemo(() => ({
@@ -76,7 +92,7 @@ export default function CategoryBreakdown({
   const totalSpent = data.reduce((sum, item) => sum + item.amount, 0)
 
   const renderPieChart = () => (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
           data={data}
@@ -87,40 +103,67 @@ export default function CategoryBreakdown({
           paddingAngle={2}
           dataKey="amount"
         >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
+          {data.map((entry) => (
+            <Cell key={`cell-${entry.category}`} fill={entry.color} />
           ))}
         </Pie>
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), 'Spent']}
+          contentStyle={{
+            backgroundColor: themeColors.background,
+            border: `1px solid ${themeColors.border}`,
+            borderRadius: '8px',
+            color: themeColors.text,
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+          }}
+          labelStyle={{ color: themeColors.text }}
         />
       </PieChart>
     </ResponsiveContainer>
   )
 
   const renderBarChart = () => (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} layout="horizontal">
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 10, right: 30, left: 85, bottom: 10 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke={themeColors.gridLines} />
         <XAxis
           type="number"
           tickFormatter={formatCurrency}
-          stroke="#6b7280"
+          stroke={themeColors.textMuted}
           fontSize={12}
+          tick={{ fill: themeColors.textMuted, fontSize: 11 }}
+          axisLine={false}
+          tickLine={false}
         />
         <YAxis
           type="category"
           dataKey="category"
-          stroke="#6b7280"
-          fontSize={12}
-          width={100}
+          stroke={themeColors.textMuted}
+          fontSize={11}
+          width={80}
+          tick={{ fill: themeColors.textMuted, fontSize: 11 }}
+          interval={0}
+          axisLine={false}
+          tickLine={false}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), 'Spent']}
+          contentStyle={{
+            backgroundColor: themeColors.background,
+            border: `1px solid ${themeColors.border}`,
+            borderRadius: '8px',
+            color: themeColors.text,
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+          }}
+          labelStyle={{ color: themeColors.text }}
         />
         <Bar dataKey="amount" radius={[0, 4, 4, 0]}>
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
+          {data.map((entry) => (
+            <Cell key={`cell-${entry.category}`} fill={entry.color} />
           ))}
         </Bar>
       </BarChart>
@@ -129,51 +172,51 @@ export default function CategoryBreakdown({
 
   if (loading) {
     return (
-      <div className="apple-card rounded-lg shadow p-6">
+      <div className="card-modern p-6">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4" />
-          <div className="h-64 bg-gray-200 rounded" />
+          <div className="h-4 bg-muted rounded w-1/3 mb-4" />
+          <div className="h-64 bg-muted rounded" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="apple-card rounded-lg shadow p-6">
+    <div className="card-modern p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h3 className="text-lg font-medium text-foreground">Spending by Category</h3>
           <p className="text-sm text-muted-foreground">Total: {formatCurrency(totalSpent)}</p>
         </div>
 
-        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+        <div className="chart-controls mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           {/* Period Selector */}
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input-modern text-sm bg-background text-foreground"
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 3 months</option>
-            <option value="1y">Last year</option>
+            <option value="7d" className="bg-background text-foreground">Last 7 days</option>
+            <option value="30d" className="bg-background text-foreground">Last 30 days</option>
+            <option value="90d" className="bg-background text-foreground">Last 3 months</option>
+            <option value="1y" className="bg-background text-foreground">Last year</option>
           </select>
 
           {/* Chart Type Selector */}
           <select
             value={selectedChart}
             onChange={(e) => setSelectedChart(e.target.value as 'pie' | 'bar')}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input-modern text-sm bg-background text-foreground"
           >
-            <option value="pie">Pie Chart</option>
-            <option value="bar">Bar Chart</option>
+            <option value="pie" className="bg-background text-foreground">Pie Chart</option>
+            <option value="bar" className="bg-background text-foreground">Bar Chart</option>
           </select>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Chart */}
-        <div className="h-64">
+        <div className={`chart-container ${selectedChart === 'bar' ? 'h-80' : 'h-64'}`}>
           {selectedChart === 'pie' ? renderPieChart() : renderBarChart()}
         </div>
 
@@ -187,10 +230,10 @@ export default function CategoryBreakdown({
                   style={{ backgroundColor: category.color }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-primary-900 truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {category.category}
                   </p>
-                  <p className="text-xs text-primary-900">
+                  <p className="text-xs text-muted-foreground">
                     {category.count} transactions
                   </p>
                 </div>
@@ -208,7 +251,7 @@ export default function CategoryBreakdown({
 
           {data.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-gray-500">No spending data available</p>
+              <p className="text-muted-foreground">No spending data available</p>
             </div>
           )}
         </div>

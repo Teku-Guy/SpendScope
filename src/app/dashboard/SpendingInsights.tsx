@@ -102,7 +102,7 @@ export default function SpendingInsights() {
           <div className="h-6 bg-muted rounded w-1/3 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="h-16 bg-muted rounded-lg" />
+              <div key={`loading-${i}`} className="h-16 bg-muted rounded-lg" />
             ))}
           </div>
         </div>

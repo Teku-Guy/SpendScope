@@ -15,6 +15,7 @@ import {
   Bar
 } from 'recharts'
 import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface SpendingData {
   date: string
@@ -34,8 +35,54 @@ export default function SpendingChart({
 }: SpendingChartProps) {
   const [data, setData] = useState<SpendingData[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>(period)
-  const [selectedChart, setSelectedChart] = useState<'line' | 'area' | 'bar'>(chartType)
+  // Sanitize and validate user inputs to prevent XSS
+  const isValidPeriod = (value: string): value is '7d' | '30d' | '90d' | '1y' => {
+    return ['7d', '30d', '90d', '1y'].includes(value)
+  }
+
+  const isValidChartType = (value: string): value is 'line' | 'area' | 'bar' => {
+    return ['line', 'area', 'bar'].includes(value)
+  }
+
+  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>(
+    isValidPeriod(period) ? period : '30d'
+  )
+  const [selectedChart, setSelectedChart] = useState<'line' | 'area' | 'bar'>(
+    isValidChartType(chartType) ? chartType : 'area'
+  )
+  const { actualTheme } = useTheme()
+
+  // Sanitize color values to prevent XSS
+  const sanitizeColor = (color: string): string => {
+    // Only allow valid hex colors, rgb/rgba colors, and named colors
+    const validColorPattern = /^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|[a-zA-Z]+)$/
+    return validColorPattern.test(color) ? color : '#000000'
+  }
+
+  // Get theme-aware colors with sanitization
+  const getThemeColors = () => {
+    const isDark = actualTheme === 'dark'
+
+    const rawColors = {
+      primary: isDark ? '#ef4444' : '#dc2626',      // red-500 : red-600
+      primaryLight: isDark ? '#fca5a5' : '#fecaca', // red-300 : red-200
+      primaryFill: isDark ? 'rgba(239, 68, 68, 0.1)' : 'rgba(254, 202, 202, 0.3)',
+      text: isDark ? '#f9fafb' : '#111827',         // gray-50 : gray-900
+      textMuted: isDark ? '#9ca3af' : '#6b7280',    // gray-400 : gray-500
+      border: isDark ? '#374151' : '#e5e7eb',       // gray-700 : gray-200
+      background: isDark ? '#1f2937' : '#ffffff',   // gray-800 : white
+      gridLines: isDark ? '#374151' : '#f3f4f6',    // gray-700 : gray-100
+      positive: isDark ? '#10b981' : '#059669',     // emerald-500 : emerald-600
+      negative: isDark ? '#ef4444' : '#dc2626'      // red-500 : red-600
+    }
+
+    // Sanitize all color values
+    return Object.fromEntries(
+      Object.entries(rawColors).map(([key, value]) => [key, sanitizeColor(value)])
+    ) as typeof rawColors
+  }
+
+  const colors = getThemeColors()
 
   useEffect(() => {
     const fetchSpendingData = async () => {
@@ -94,7 +141,7 @@ export default function SpendingChart({
 
   if (loading) {
     return (
-      <div className="apple-card p-6">
+      <div className="card-modern p-6">
         <div className="animate-pulse">
           <div className="h-4 bg-muted rounded w-1/3 mb-4" />
           <div className="h-64 bg-muted rounded" />
@@ -110,24 +157,34 @@ export default function SpendingChart({
     }
 
     const commonElements = [
-      <CartesianGrid key="grid" strokeDasharray="3 3" stroke="#f0f0f0" />,
+      <CartesianGrid key="grid" strokeDasharray="3 3" stroke={colors.gridLines} />,
       <XAxis
         key="xaxis"
         dataKey="date"
         tickFormatter={formatDate}
-        stroke="#6b7280"
+        stroke={colors.textMuted}
         fontSize={12}
+        tick={{ fill: colors.textMuted }}
       />,
       <YAxis
         key="yaxis"
         tickFormatter={formatCurrency}
-        stroke="#6b7280"
+        stroke={colors.textMuted}
         fontSize={12}
+        tick={{ fill: colors.textMuted }}
       />,
       <Tooltip
         key="tooltip"
         formatter={(value: number) => [formatCurrency(value), 'Spent']}
         labelFormatter={(label) => `Date: ${formatDate(label)}`}
+        contentStyle={{
+          backgroundColor: colors.background,
+          border: `1px solid ${colors.border}`,
+          borderRadius: '8px',
+          color: colors.text,
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}
+        labelStyle={{ color: colors.text }}
       />
     ]
 
@@ -139,10 +196,15 @@ export default function SpendingChart({
             <Line
               type="monotone"
               dataKey="amount"
-              stroke="#ef4444"
+              stroke={colors.primary}
               strokeWidth={2}
-              dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: '#ef4444', strokeWidth: 2 }}
+              dot={{ fill: colors.primary, strokeWidth: 2, r: 4, stroke: colors.background }}
+              activeDot={{
+                r: 6,
+                stroke: colors.primary,
+                strokeWidth: 2,
+                fill: colors.background
+              }}
             />
           </LineChart>
         )
@@ -151,7 +213,11 @@ export default function SpendingChart({
         return (
           <BarChart {...commonProps}>
             {commonElements}
-            <Bar dataKey="amount" fill="#ef4444" radius={[2, 2, 0, 0]} />
+            <Bar
+              dataKey="amount"
+              fill={colors.primary}
+              radius={[2, 2, 0, 0]}
+            />
           </BarChart>
         )
 
@@ -162,8 +228,8 @@ export default function SpendingChart({
             <Area
               type="monotone"
               dataKey="amount"
-              stroke="#ef4444"
-              fill="#fecaca"
+              stroke={colors.primary}
+              fill={colors.primaryFill}
               strokeWidth={2}
             />
           </AreaChart>
@@ -172,7 +238,7 @@ export default function SpendingChart({
   }
 
   return (
-    <div className="apple-card p-6">
+    <div className="card-modern p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h3 className="text-lg font-medium text-foreground">Spending Trends</h3>
@@ -180,7 +246,7 @@ export default function SpendingChart({
             <span>Total: {formatCurrency(totalSpent)}</span>
             <span>Daily Avg: {formatCurrency(averageDaily)}</span>
             <div className={`flex items-center space-x-1 ${
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
+              trend.isPositive ? 'text-emerald-600' : 'text-destructive'
             }`}>
               {trend.isPositive ? (
                 <TrendingDownIcon className="h-4 w-4" />
@@ -196,24 +262,34 @@ export default function SpendingChart({
           {/* Period Selector */}
           <select
             value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value as '7d' | '30d' | '90d' | '1y')}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => {
+              const value = e.target.value
+              if (isValidPeriod(value)) {
+                setSelectedPeriod(value)
+              }
+            }}
+            className="input-modern text-sm bg-background text-foreground"
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 3 months</option>
-            <option value="1y">Last year</option>
+            <option value="7d" className="bg-background text-foreground">Last 7 days</option>
+            <option value="30d" className="bg-background text-foreground">Last 30 days</option>
+            <option value="90d" className="bg-background text-foreground">Last 3 months</option>
+            <option value="1y" className="bg-background text-foreground">Last year</option>
           </select>
 
           {/* Chart Type Selector */}
           <select
             value={selectedChart}
-            onChange={(e) => setSelectedChart(e.target.value as 'line' | 'area' | 'bar')}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => {
+              const value = e.target.value
+              if (isValidChartType(value)) {
+                setSelectedChart(value)
+              }
+            }}
+            className="input-modern text-sm bg-background text-foreground"
           >
-            <option value="area">Area Chart</option>
-            <option value="line">Line Chart</option>
-            <option value="bar">Bar Chart</option>
+            <option value="area" className="bg-background text-foreground">Area Chart</option>
+            <option value="line" className="bg-background text-foreground">Line Chart</option>
+            <option value="bar" className="bg-background text-foreground">Bar Chart</option>
           </select>
         </div>
       </div>

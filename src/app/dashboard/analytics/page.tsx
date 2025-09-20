@@ -147,8 +147,8 @@ export default function AnalyticsPage() {
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
       case 'high': return 'text-destructive bg-destructive/10 border-destructive/20'
-      case 'medium': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
-      default: return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+      case 'medium': return 'text-amber-600 bg-amber-500/10 border-amber-500/20'
+      default: return 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20'
     }
   }
 
@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
           <div className="h-8 bg-muted rounded w-48 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-muted h-32 rounded-lg"></div>
+              <div key={`loading-stat-${i}`} className="bg-muted h-32 rounded-lg"></div>
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -291,8 +291,8 @@ export default function AnalyticsPage() {
 
           <div className="card-modern p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-500/10 rounded-lg">
-                <Target className="h-6 w-6 text-yellow-600" />
+              <div className="p-2 bg-amber-500/10 rounded-lg">
+                <Target className="h-6 w-6 text-amber-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">Budget Usage</p>
@@ -301,7 +301,7 @@ export default function AnalyticsPage() {
                   <div
                     className={`h-2 rounded-full ${
                       analyticsData.budgetUtilization > 90 ? 'bg-destructive' :
-                      analyticsData.budgetUtilization > 70 ? 'bg-yellow-500' : 'bg-emerald-500'
+                      analyticsData.budgetUtilization > 70 ? 'bg-amber-500' : 'bg-emerald-500'
                     }`}
                     style={{ width: `${Math.min(analyticsData.budgetUtilization, 100)}%` }}
                   />
@@ -401,8 +401,8 @@ export default function AnalyticsPage() {
 
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-foreground">Category Forecasts</h4>
-              {forecastData.forecasts.slice(0, 5).map((forecast, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              {forecastData.forecasts.slice(0, 5).map((forecast) => (
+                <div key={`forecast-${forecast.category}`} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-foreground">{forecast.category}</span>
@@ -429,8 +429,8 @@ export default function AnalyticsPage() {
               <h4 className="text-sm font-medium text-foreground mb-3">Recommendations</h4>
               <ul className="space-y-2">
                 {forecastData.monthlyForecast.recommendations.map((recommendation, index) => (
-                  <li key={index} className="flex items-start space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <li key={`recommendation-${index}-${recommendation.slice(0, 20)}`} className="flex items-start space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-muted-foreground">{recommendation}</span>
                   </li>
                 ))}
@@ -459,15 +459,15 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {monthlyTrends.map((trend, index) => {
+                  {monthlyTrends.map((trend) => {
                     const savingsRate = trend.income > 0 ? (trend.savings / trend.income * 100) : 0
                     return (
-                      <tr key={index} className="border-b border-border">
+                      <tr key={`trend-${trend.month}`} className="border-b border-border">
                         <td className="py-3 text-sm font-medium text-foreground">{trend.month}</td>
                         <td className="py-3 text-sm text-right text-foreground">{formatCurrency(trend.spending)}</td>
                         <td className="py-3 text-sm text-right text-foreground">{formatCurrency(trend.income)}</td>
                         <td className="py-3 text-sm text-right text-foreground">{formatCurrency(trend.savings)}</td>
-                        <td className={`py-3 text-sm text-right font-medium ${savingsRate >= 20 ? 'text-emerald-600' : savingsRate >= 10 ? 'text-yellow-600' : 'text-destructive'}`}>
+                        <td className={`py-3 text-sm text-right font-medium ${savingsRate >= 20 ? 'text-emerald-600' : savingsRate >= 10 ? 'text-amber-600' : 'text-destructive'}`}>
                           {savingsRate.toFixed(1)}%
                         </td>
                       </tr>

@@ -67,7 +67,11 @@ export default function TransactionList({
 
       if (data.success) {
         if (isLoadMore) {
-          setTransactions(prev => [...prev, ...data.transactions])
+          setTransactions(prev => {
+            const existingIds = new Set(prev.map(t => t.id))
+            const newTransactions = data.transactions.filter(t => !existingIds.has(t.id))
+            return [...prev, ...newTransactions]
+          })
         } else {
           setTransactions(data.transactions)
           setOffset(0)
@@ -110,12 +114,12 @@ export default function TransactionList({
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      'Food and Drink': 'bg-amber-500/10 text-amber-700 border-amber-200',
-      'Transportation': 'bg-blue-500/10 text-blue-700 border-blue-200',
-      'Shopping': 'bg-purple-500/10 text-purple-700 border-purple-200',
-      'Entertainment': 'bg-pink-500/10 text-pink-700 border-pink-200',
+      'Food and Drink': 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+      'Transportation': 'bg-blue-500/10 text-blue-700 border-blue-500/20',
+      'Shopping': 'bg-purple-500/10 text-purple-700 border-purple-500/20',
+      'Entertainment': 'bg-pink-500/10 text-pink-700 border-pink-500/20',
       'Bills': 'bg-destructive/10 text-destructive border-destructive/20',
-      'Healthcare': 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
+      'Healthcare': 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
       'Other': 'bg-muted text-muted-foreground border-border'
     }
     return colors[category] || 'bg-muted text-muted-foreground border-border'
@@ -128,7 +132,7 @@ export default function TransactionList({
           <div className="h-4 bg-muted rounded w-1/4 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="h-16 bg-muted rounded-lg" />
+              <div key={`loading-${i}`} className="h-16 bg-muted rounded-lg" />
             ))}
           </div>
         </div>
@@ -145,7 +149,7 @@ export default function TransactionList({
           </h3>
 
           {showFilters && (
-            <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
+            <div className="mt-4 sm:mt-0 transaction-filters flex flex-col sm:flex-row gap-2">
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -194,7 +198,7 @@ export default function TransactionList({
           </div>
         ) : (
           transactions.map((transaction) => (
-            <div key={transaction.id} className="p-6 hover:bg-accent/50 transition-colors duration-200">
+            <div key={transaction.id} className="transaction-item p-6 hover:bg-accent/50 transition-colors duration-200">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">

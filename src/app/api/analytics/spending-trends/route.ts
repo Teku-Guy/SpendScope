@@ -60,8 +60,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           ${period === '1y' ? 'month' : 'day'},
           date
         ) as period_date,
-        SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as spending,
-        SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as income,
+        SUM(CASE WHEN category = 'Income' THEN 0 ELSE amount END) as spending,
+        SUM(CASE WHEN category = 'Income' THEN amount ELSE 0 END) as income,
         COUNT(*) as transaction_count
       FROM transactions
       WHERE "userId" = ${session.user.id}

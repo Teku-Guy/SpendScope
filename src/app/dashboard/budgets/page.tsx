@@ -207,8 +207,8 @@ export default function BudgetsPage() {
 
   const getBudgetStatusColor = (percentage: number) => {
     if (percentage >= 100) return 'text-destructive bg-destructive/10 border-destructive/20'
-    if (percentage >= 80) return 'text-yellow-600 bg-yellow-500/10 border-yellow-200'
-    return 'text-emerald-600 bg-emerald-500/10 border-emerald-200'
+    if (percentage >= 80) return 'text-amber-600 bg-amber-500/10 border-amber-500/20'
+    return 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20'
   }
 
   const getTrendIcon = (percentage: number) => {
@@ -225,7 +225,7 @@ export default function BudgetsPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded w-48 mb-6"></div>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-muted h-32 rounded-lg mb-4"></div>
+            <div key={`loading-${i}`} className="bg-muted h-32 rounded-lg mb-4"></div>
           ))}
         </div>
       </div>
@@ -358,7 +358,7 @@ export default function BudgetsPage() {
                     <div
                       className={`h-3 rounded-full transition-all duration-300 ${
                         budget.percentage >= 100 ? 'bg-destructive' :
-                        budget.percentage >= 80 ? 'bg-yellow-500' : 'bg-emerald-500'
+                        budget.percentage >= 80 ? 'bg-amber-500' : 'bg-emerald-500'
                       }`}
                       style={{ width: `${Math.min(budget.percentage, 100)}%` }}
                     ></div>

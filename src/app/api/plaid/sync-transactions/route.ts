@@ -5,17 +5,14 @@ import { authOptions } from '@/lib/auth';
 import { plaidClient } from '@/lib/plaid';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { categorizeTransaction } from '@/lib/transaction-categorizer';
 
 export async function POST() {
   try {
-    console.log('=== TRANSACTION SYNC STARTED ===');
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.log('❌ No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    console.log('✅ User session found:', session.user.id);
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -23,11 +20,8 @@ export async function POST() {
     });
 
     if (!user?.plaidAccessToken) {
-      console.log('❌ No plaidAccessToken found for user');
       return NextResponse.json({ error: 'No bank account connected' }, { status: 400 });
     }
-
-    console.log('✅ PlaidAccessToken found, starting sync...');
 
     // Ensure accounts table is populated/matches latest accounts
     const accountsResp = await plaidClient.accountsGet({ access_token: user.plaidAccessToken });
@@ -83,10 +77,8 @@ export async function POST() {
     let offset = 0;
     let total = 0;
 
-    console.log(`📅 Fetching transactions from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
 
     while (true) {
-      console.log(`📤 Fetching batch: offset=${offset}, count=${count}`);
       const resp = await plaidClient.transactionsGet({
         access_token: user.plaidAccessToken,
         start_date: startDate.toISOString().split('T')[0],
@@ -96,7 +88,6 @@ export async function POST() {
 
       const { transactions, total_transactions } = resp.data;
       if (total === 0) total = total_transactions;
-      console.log(`📥 Received ${transactions.length} transactions, total available: ${total_transactions}`);
       all.push(...transactions);
       offset += transactions.length;
 
@@ -105,7 +96,6 @@ export async function POST() {
       // await new Promise(r => setTimeout(r, 50));
     }
 
-    console.log(`📊 Total transactions fetched: ${all.length}`);
 
     let processedCount = 0;
     let errorCount = 0;
@@ -121,6 +111,15 @@ export async function POST() {
 
         const transactionName =
           txn.merchant_name || txn.original_description || 'Unknown Transaction';
+
+        // Use intelligent categorization
+        const categoryResult = categorizeTransaction({
+          merchantName: txn.merchant_name,
+          originalDescription: txn.original_description,
+          plaidCategory: txn.category,
+          personalFinanceCategory: (txn as any).personal_finance_category,
+          amount: txn.amount
+        });
 
         const metadata: Prisma.InputJsonValue = {
           transaction_id: txn.transaction_id,
@@ -141,6 +140,12 @@ export async function POST() {
           transaction_code: txn.transaction_code ?? null,
           transaction_type: txn.transaction_type ?? null,
           personal_finance_category: (txn as any).personal_finance_category ?? null,
+          categorization: {
+            category: categoryResult.category,
+            subcategory: categoryResult.subcategory,
+            confidence: categoryResult.confidence,
+            source: categoryResult.source
+          }
         };
 
         await prisma.transaction.upsert({
@@ -150,8 +155,8 @@ export async function POST() {
             date: new Date(txn.date),
             name: transactionName,
             merchantName: txn.merchant_name ?? null,
-            category: txn.category?.[0] || 'Other',
-            subcategory: txn.category?.[1] || null,
+            category: categoryResult.category,
+            subcategory: categoryResult.subcategory || txn.category?.[1] || null,
             plaidMetadata: metadata,
           },
           create: {
@@ -162,8 +167,8 @@ export async function POST() {
             date: new Date(txn.date),
             name: transactionName,
             merchantName: txn.merchant_name ?? null,
-            category: txn.category?.[0] || 'Other',
-            subcategory: txn.category?.[1] || null,
+            category: categoryResult.category,
+            subcategory: categoryResult.subcategory || txn.category?.[1] || null,
             plaidMetadata: metadata,
           },
         });
@@ -175,7 +180,6 @@ export async function POST() {
       }
     }
 
-    console.log(`✅ SYNC COMPLETE - Fetched: ${all.length}, Processed: ${processedCount}, Errors: ${errorCount}`);
 
     return NextResponse.json({
       success: true,

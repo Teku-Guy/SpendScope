@@ -33,6 +33,7 @@ export default function BudgetOverview() {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Form state
   const [newBudget, setNewBudget] = useState({
@@ -40,6 +41,10 @@ export default function BudgetOverview() {
     category: '',
     budgetLimit: '',
   })
+
+  // Alias for modal compatibility
+  const formData = newBudget
+  const setFormData = setNewBudget
 
   const categories = [
     { value: 'Food & Dining', label: 'Food & Dining' },
@@ -88,6 +93,7 @@ export default function BudgetOverview() {
   const handleCreateBudget = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
+    setError(null)
 
     try {
       const response = await fetch('/api/budgets', {
@@ -108,12 +114,13 @@ export default function BudgetOverview() {
         setBudgets(prev => [...prev, result.budget])
         setShowCreateModal(false)
         setNewBudget({ name: '', category: '', budgetLimit: '' })
+        setError(null)
       } else {
-        alert(result.error || 'Failed to create budget')
+        setError(result.error || 'Failed to create budget')
       }
-    } catch (error) {
-      console.error('Error creating budget:', error)
-      alert('Failed to create budget')
+    } catch (err) {
+      console.error('Error creating budget:', err)
+      setError('Failed to create budget. Please try again.')
     } finally {
       setCreating(false)
     }
@@ -153,7 +160,7 @@ export default function BudgetOverview() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-muted h-24 rounded-lg"></div>
+          <div key={`loading-${i}`} className="animate-pulse bg-muted h-24 rounded-lg"></div>
         ))}
       </div>
     )
@@ -205,9 +212,9 @@ export default function BudgetOverview() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="budget-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {budgets.map((budget) => (
-            <div key={budget.id} className="card-modern p-6 hover:shadow-medium transition-all duration-200">
+            <div key={budget.id} className="budget-card card-modern p-6 hover:shadow-medium transition-all duration-200">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-semibold text-foreground">{budget.name}</h3>
@@ -253,48 +260,89 @@ export default function BudgetOverview() {
       {/* Create Budget Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => {
+          setShowCreateModal(false)
+          setError(null)
+          setNewBudget({ name: '', category: '', budgetLimit: '' })
+        }}
         title="Create New Budget"
+        size="md"
       >
-        <form onSubmit={handleCreateBudget} className="space-y-4">
+        <form onSubmit={handleCreateBudget} className="space-y-5">
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              </div>
+            </div>
+          )}
+
           <Input
             label="Budget Name"
-            value={newBudget.name}
-            onChange={(e) => setNewBudget(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="e.g., Monthly Groceries"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="e.g., Monthly Groceries, Entertainment"
             required
+            helper="Give your budget a descriptive name"
           />
 
           <Select
             label="Category"
-            value={newBudget.category}
-            onChange={(e) => setNewBudget(prev => ({ ...prev, category: e.target.value }))}
-            options={categories}
+            value={formData.category}
+            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+            options={[
+              { value: '', label: 'Select a category' },
+              ...categories
+            ]}
             required
+            helper="Choose the spending category this budget will track"
           />
 
           <Input
             label="Budget Limit"
             type="number"
             step="0.01"
-            min="0"
-            value={newBudget.budgetLimit}
-            onChange={(e) => setNewBudget(prev => ({ ...prev, budgetLimit: e.target.value }))}
-            placeholder="0.00"
+            min="0.01"
+            value={formData.budgetLimit}
+            onChange={(e) => setFormData(prev => ({ ...prev, budgetLimit: e.target.value }))}
+            placeholder="500.00"
             required
+            helper="Set your monthly spending limit for this category"
+            icon={
+              <span className="text-muted-foreground font-medium">$</span>
+            }
           />
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-border">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowCreateModal(false)}
+              onClick={() => {
+                setShowCreateModal(false)
+                setError(null)
+                setFormData({ name: '', category: '', budgetLimit: '' })
+              }}
               disabled={creating}
+              className="min-w-[80px]"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={creating}>
-              {creating ? 'Creating...' : 'Create Budget'}
+            <Button
+              type="submit"
+              disabled={creating || !formData.name.trim() || !formData.category || !formData.budgetLimit}
+              className="min-w-[120px]"
+            >
+              {creating ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>Creating...</span>
+                </div>
+              ) : (
+                'Create Budget'
+              )}
             </Button>
           </div>
         </form>

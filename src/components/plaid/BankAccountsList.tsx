@@ -99,7 +99,7 @@ export default function BankAccountsList() {
     return (
       <div className="space-y-4">
         {[1, 2].map((i) => (
-          <div key={i} className="animate-pulse bg-muted h-16 rounded-lg"></div>
+          <div key={`loading-account-${i}`} className="animate-pulse bg-muted h-16 rounded-lg"></div>
         ))}
       </div>
     );
@@ -183,12 +183,12 @@ export default function BankAccountsList() {
       ))}
 
       {/* Warning Note */}
-      <div className="card-modern p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+      <div className="card-modern p-4 bg-amber-500/10 border-amber-500/20">
         <div className="flex items-start space-x-3">
-          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Important</h4>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+            <h4 className="text-sm font-medium text-foreground">Important</h4>
+            <p className="text-sm text-muted-foreground mt-1">
               Disconnecting a bank account will permanently delete all associated transaction data.
               This action cannot be undone.
             </p>

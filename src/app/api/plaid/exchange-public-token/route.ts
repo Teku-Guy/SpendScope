@@ -35,7 +35,6 @@ export async function POST(request: NextRequest) {
       if (existingUser.id === session.user.id) {
         // Same user reconnecting - this is a refresh
         isExistingConnection = true;
-        console.log('Existing connection detected - refreshing data');
       } else {
         // Different user trying to connect the same bank account
         return NextResponse.json({

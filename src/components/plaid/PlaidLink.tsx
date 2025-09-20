@@ -54,30 +54,22 @@ export default function PlaidLink({ onSuccess }: PlaidLinkProps) {
       const data = await response.json()
 
       if (data.success) {
-        console.log(data.message)
-
         if (data.isExistingConnection) {
-          console.log('Refreshing existing bank connection data...')
           alert('Bank account data refreshed successfully! All transactions have been updated.')
         } else {
-          console.log('New bank account connected successfully')
           alert('Bank account connected successfully!')
         }
 
         // Sync transactions
-        console.log('Starting transaction sync...')
         const syncResponse = await fetch('/api/plaid/sync-transactions', {
           method: 'POST',
         })
 
         const syncData = await syncResponse.json()
-        console.log('Transaction sync result:', syncData)
 
         if (!syncResponse.ok) {
           console.error('Transaction sync failed:', syncData)
           alert('Warning: Bank account connected but transaction sync failed. Please try refreshing manually.')
-        } else {
-          console.log('Transaction sync completed successfully')
         }
 
         onSuccess?.()

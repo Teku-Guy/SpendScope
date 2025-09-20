@@ -78,9 +78,9 @@ export default function MonthlySummary() {
       <div className="card-modern p-6">
         <div className="animate-pulse">
           <div className="h-4 bg-muted rounded w-1/3 mb-4" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="summary-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="h-24 bg-muted rounded-lg" />
+              <div key={`loading-summary-${i}`} className="h-24 bg-muted rounded-lg" />
             ))}
           </div>
         </div>
@@ -147,16 +147,16 @@ export default function MonthlySummary() {
         <p className="text-sm text-muted-foreground">{getCurrentMonthName()}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="summary-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryCards.map((card) => {
           const IconComponent = card.icon
           const isPositiveTrend = card.isNegativeBetter ? card.change < 0 : card.change > 0
           const TrendIcon = isPositiveTrend ? TrendingUpIcon : TrendingDownIcon
 
           return (
-            <div key={card.title} className="card-modern p-6 hover:shadow-medium transition-all duration-200">
+            <div key={card.title} className="summary-card card-modern p-6 hover:shadow-medium transition-all duration-200">
               <div className="flex items-center">
-                <div className={`flex-shrink-0 p-3 rounded-full ${card.bgColor} border border-border/50`}>
+                <div className={`icon-container flex-shrink-0 p-3 rounded-full ${card.bgColor} border border-border/50`}>
                   <IconComponent className={`h-6 w-6 ${card.color}`} />
                 </div>
                 <div className="ml-5 w-0 flex-1">

@@ -398,3 +398,324 @@ body {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
+
+/* Mobile-first responsive utilities */
+@media (max-width: 640px) {
+  .card-modern {
+    border-radius: calc(var(--radius) * 0.8);
+    margin: 0 -0.5rem;
+    padding: 1rem;
+  }
+
+  .apple-card {
+    border-radius: 12px;
+    margin: 0 -0.25rem;
+  }
+
+  .btn-minimal {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .input-modern {
+    padding: 0.75rem;
+    font-size: 1rem; /* Prevents zoom on iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  .card-modern {
+    padding: 0.75rem;
+    margin: 0 -0.75rem;
+  }
+
+  .apple-card {
+    padding: 1rem;
+    margin: 0 -0.5rem;
+  }
+}
+
+/* Touch-friendly sizing for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .btn-minimal {
+    min-height: 44px; /* iOS touch target minimum */
+    padding: 0.75rem 1rem;
+  }
+
+  .input-modern {
+    min-height: 44px;
+    padding: 0.75rem;
+  }
+
+  /* Remove hover effects on touch devices */
+  .card-modern:hover {
+    transform: none;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.05),
+      0 4px 15px rgba(0, 0, 0, 0.05),
+      0 7px 25px rgba(0, 0, 0, 0.03);
+  }
+
+  .apple-card:hover {
+    transform: none;
+  }
+}
+
+/* Cross-browser compatibility fixes */
+/* Backdrop filter fallbacks */
+@supports not (backdrop-filter: blur(10px)) {
+  .apple-blur {
+    background: var(--color-background);
+  }
+
+  .apple-input {
+    background: var(--color-background);
+  }
+
+  .apple-button {
+    background: var(--color-background);
+  }
+}
+
+/* Color-mix fallbacks for older browsers */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .card-modern {
+    border: 1px solid var(--color-border);
+  }
+
+  .apple-card {
+    border: 1px solid var(--color-border);
+  }
+
+  .apple-input {
+    border: 1px solid var(--color-border);
+    background: var(--color-background);
+  }
+
+  .apple-blur {
+    background: var(--color-background);
+    opacity: 0.95;
+  }
+}
+
+/* Enhanced scrollbar for mobile */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  * {
+    scrollbar-width: thin;
+  }
+}
+
+/* Safe area handling for iOS */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+
+  .safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Additional mobile optimizations for dashboard components */
+@media (max-width: 640px) {
+  /* Transaction list mobile optimization */
+  .transaction-item {
+    padding: 1rem 0.75rem;
+  }
+
+  .transaction-filters {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .transaction-filters select,
+  .transaction-filters input {
+    width: 100%;
+    min-width: unset;
+  }
+
+  /* Budget cards mobile optimization */
+  .budget-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .budget-card {
+    padding: 1rem;
+  }
+
+  /* Monthly summary mobile optimization */
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .summary-card {
+    padding: 1rem;
+  }
+
+  .summary-card .icon-container {
+    padding: 0.5rem;
+  }
+
+  .summary-card .icon-container svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  /* Chart containers mobile optimization */
+  .chart-container {
+    height: 200px;
+  }
+
+  .chart-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .chart-controls select {
+    width: 100%;
+  }
+}
+
+/* Very small mobile devices */
+@media (max-width: 375px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-modern {
+    margin: 0 -0.25rem;
+    padding: 0.75rem;
+  }
+
+  .chart-container {
+    height: 180px;
+  }
+}
+
+/* Modal mobile optimization */
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 1rem;
+  }
+
+  .modal-content {
+    margin: 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-form .input-group {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Cross-browser flexbox fallbacks */
+@supports not (gap: 1rem) {
+  .flex-gap > * + * {
+    margin-left: 1rem;
+  }
+
+  .flex-gap-y > * + * {
+    margin-top: 1rem;
+  }
+
+  .grid-gap > * {
+    margin-bottom: 1rem;
+    margin-right: 1rem;
+  }
+}
+
+/* IE11 grid fallbacks */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .grid > * {
+    flex: 1;
+    min-width: 250px;
+    margin: 0.5rem;
+  }
+}
+
+/* Safari specific fixes */
+@supports (-webkit-appearance: none) {
+  .input-modern {
+    -webkit-appearance: none;
+    border-radius: var(--radius);
+  }
+
+  .btn-minimal {
+    -webkit-appearance: none;
+  }
+}
+
+/* Firefox specific fixes */
+@-moz-document url-prefix() {
+  .card-modern {
+    background-clip: padding-box;
+  }
+
+  .input-modern {
+    background-clip: padding-box;
+  }
+}
+
+/* SVG Icon Rendering Fixes */
+svg {
+  shape-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Lucide icons specific optimization */
+.lucide {
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+}
+
+/* Input icons fix */
+.apple-input + svg,
+.input-modern + svg,
+input + svg {
+  pointer-events: none;
+  shape-rendering: geometricPrecision;
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+/* Icon containers */
+.icon-container svg,
+[class*="icon"] svg {
+  display: block;
+  shape-rendering: geometricPrecision;
+  transform: translateZ(0);
+}
+
+/* Fix for sub-pixel rendering issues */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  svg {
+    shape-rendering: auto;
+  }
+}
