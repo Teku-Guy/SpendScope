@@ -75,13 +75,19 @@ export default function MonthlySummary() {
 
   if (loading) {
     return (
-      <div className="card-modern p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-muted rounded w-1/3 mb-4" />
-          <div className="summary-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }, (_, i) => (
-              <div key={`loading-summary-${i}`} className="h-24 bg-muted rounded-lg" />
-            ))}
+      <div className="h-full w-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <div className="animate-pulse">
+            <div className="h-4 bg-muted rounded w-1/3" />
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <div className="animate-pulse">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 4 }, (_, i) => (
+                <div key={`loading-summary-${i}`} className="h-24 bg-muted rounded-lg" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -90,8 +96,13 @@ export default function MonthlySummary() {
 
   if (!data) {
     return (
-      <div className="card-modern p-6">
-        <p className="text-muted-foreground">No data available</p>
+      <div className="h-full w-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-xl font-bold text-foreground">Monthly Summary</h2>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">No data available</p>
+        </div>
       </div>
     )
   }
@@ -141,76 +152,80 @@ export default function MonthlySummary() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-foreground">Monthly Summary</h2>
-        <p className="text-sm text-muted-foreground">{getCurrentMonthName()}</p>
+    <div className="h-full w-full flex flex-col">
+      <div className="p-4 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">Monthly Summary</h2>
+          <p className="text-sm text-muted-foreground">{getCurrentMonthName()}</p>
+        </div>
       </div>
 
-      <div className="summary-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {summaryCards.map((card) => {
-          const IconComponent = card.icon
-          const isPositiveTrend = card.isNegativeBetter ? card.change < 0 : card.change > 0
-          const TrendIcon = isPositiveTrend ? TrendingUpIcon : TrendingDownIcon
+      <div className="flex-1 overflow-auto p-4">
+        <div className="summary-grid grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {summaryCards.map((card) => {
+            const IconComponent = card.icon
+            const isPositiveTrend = card.isNegativeBetter ? card.change < 0 : card.change > 0
+            const TrendIcon = isPositiveTrend ? TrendingUpIcon : TrendingDownIcon
 
-          return (
-            <div key={card.title} className="summary-card card-modern p-6 hover:shadow-medium transition-all duration-200">
-              <div className="flex items-center">
-                <div className={`icon-container flex-shrink-0 p-3 rounded-full ${card.bgColor} border border-border/50`}>
-                  <IconComponent className={`h-6 w-6 ${card.color}`} />
+            return (
+              <div key={card.title} className="summary-card bg-card border border-border rounded-lg p-4 hover:bg-accent/50 transition-all duration-200">
+                <div className="flex items-center">
+                  <div className={`icon-container flex-shrink-0 p-2 rounded-full ${card.bgColor} border border-border/30`}>
+                    <IconComponent className={`h-5 w-5 ${card.color}`} />
+                  </div>
+                  <div className="ml-4 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-muted-foreground truncate">
+                        {card.title}
+                      </dt>
+                      <dd className="text-lg font-semibold text-foreground">
+                        {card.value}
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-muted-foreground truncate">
-                      {card.title}
-                    </dt>
-                    <dd className="text-lg font-semibold text-foreground">
-                      {card.value}
-                    </dd>
-                  </dl>
+                <div className="mt-3">
+                  <div className="flex items-center text-sm">
+                    <TrendIcon
+                      className={`h-4 w-4 mr-1 ${
+                        isPositiveTrend ? 'text-emerald-500' : 'text-destructive'
+                      }`}
+                    />
+                    <span
+                      className={`text-sm font-medium ${
+                        isPositiveTrend ? 'text-emerald-600' : 'text-destructive'
+                      }`}
+                    >
+                      {formatPercentage(Math.abs(card.change))}
+                    </span>
+                    <span className="text-muted-foreground ml-1">from last month</span>
+                  </div>
                 </div>
               </div>
-              <div className="mt-4">
-                <div className="flex items-center text-sm">
-                  <TrendIcon
-                    className={`h-4 w-4 mr-1 ${
-                      isPositiveTrend ? 'text-emerald-500' : 'text-destructive'
-                    }`}
-                  />
-                  <span
-                    className={`text-sm font-medium ${
-                      isPositiveTrend ? 'text-emerald-600' : 'text-destructive'
-                    }`}
-                  >
-                    {formatPercentage(Math.abs(card.change))}
-                  </span>
-                  <span className="text-muted-foreground ml-1">from last month</span>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
 
-      {/* Quick Insights */}
-      <div className="card-modern p-4 bg-primary/5 border-primary/20">
-        <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-          <span className="text-primary">💡</span>
-          Quick Insights
-        </h3>
-        <div className="space-y-1 text-sm text-foreground/80">
-          {data.currentMonth.netFlow > 0 && (
-            <p>✓ You&apos;re saving {formatCurrency(data.currentMonth.netFlow)} this month</p>
-          )}
-          {data.trends.spendingChange < -5 && (
-            <p>✓ Your spending decreased by {Math.abs(data.trends.spendingChange).toFixed(1)}%</p>
-          )}
-          {data.trends.spendingChange > 10 && (
-            <p>⚠ Your spending increased by {data.trends.spendingChange.toFixed(1)}%</p>
-          )}
-          {data.currentMonth.netFlow < 0 && (
-            <p>⚠ You&apos;re spending {formatCurrency(Math.abs(data.currentMonth.netFlow))} more than your income</p>
-          )}
+        {/* Quick Insights */}
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+            <span className="text-primary">💡</span>
+            Quick Insights
+          </h3>
+          <div className="space-y-1 text-sm text-foreground/80">
+            {data.currentMonth.netFlow > 0 && (
+              <p>✓ You&apos;re saving {formatCurrency(data.currentMonth.netFlow)} this month</p>
+            )}
+            {data.trends.spendingChange < -5 && (
+              <p>✓ Your spending decreased by {Math.abs(data.trends.spendingChange).toFixed(1)}%</p>
+            )}
+            {data.trends.spendingChange > 10 && (
+              <p>⚠ Your spending increased by {data.trends.spendingChange.toFixed(1)}%</p>
+            )}
+            {data.currentMonth.netFlow < 0 && (
+              <p>⚠ You&apos;re spending {formatCurrency(Math.abs(data.currentMonth.netFlow))} more than your income</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -141,10 +141,14 @@ export default function SpendingChart({
 
   if (loading) {
     return (
-      <div className="card-modern p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-muted rounded w-1/3 mb-4" />
-          <div className="h-64 bg-muted rounded" />
+      <div className="h-full w-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <div className="animate-pulse">
+            <div className="h-4 bg-muted rounded w-1/3" />
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <div className="animate-pulse h-full bg-muted rounded" />
         </div>
       </div>
     )
@@ -238,63 +242,65 @@ export default function SpendingChart({
   }
 
   return (
-    <div className="card-modern p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-medium text-foreground">Spending Trends</h3>
-          <div className="mt-1 flex items-center space-x-4 text-sm text-muted-foreground">
-            <span>Total: {formatCurrency(totalSpent)}</span>
-            <span>Daily Avg: {formatCurrency(averageDaily)}</span>
-            <div className={`flex items-center space-x-1 ${
-              trend.isPositive ? 'text-emerald-600' : 'text-destructive'
-            }`}>
-              {trend.isPositive ? (
-                <TrendingDownIcon className="h-4 w-4" />
-              ) : (
-                <TrendingUpIcon className="h-4 w-4" />
-              )}
-              <span>{trend.percentage.toFixed(1)}%</span>
+    <div className="h-full w-full flex flex-col">
+      <div className="p-4 border-b border-border flex-shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-lg font-medium text-foreground">Spending Trends</h3>
+            <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <span>Total: {formatCurrency(totalSpent)}</span>
+              <span>Daily Avg: {formatCurrency(averageDaily)}</span>
+              <div className={`flex items-center space-x-1 ${
+                trend.isPositive ? 'text-emerald-600' : 'text-destructive'
+              }`}>
+                {trend.isPositive ? (
+                  <TrendingDownIcon className="h-4 w-4" />
+                ) : (
+                  <TrendingUpIcon className="h-4 w-4" />
+                )}
+                <span>{trend.percentage.toFixed(1)}%</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-          {/* Period Selector */}
-          <select
-            value={selectedPeriod}
-            onChange={(e) => {
-              const value = e.target.value
-              if (isValidPeriod(value)) {
-                setSelectedPeriod(value)
-              }
-            }}
-            className="input-modern text-sm bg-background text-foreground"
-          >
-            <option value="7d" className="bg-background text-foreground">Last 7 days</option>
-            <option value="30d" className="bg-background text-foreground">Last 30 days</option>
-            <option value="90d" className="bg-background text-foreground">Last 3 months</option>
-            <option value="1y" className="bg-background text-foreground">Last year</option>
-          </select>
+          <div className="mt-4 lg:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            {/* Period Selector */}
+            <select
+              value={selectedPeriod}
+              onChange={(e) => {
+                const value = e.target.value
+                if (isValidPeriod(value)) {
+                  setSelectedPeriod(value)
+                }
+              }}
+              className="px-3 py-2 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 3 months</option>
+              <option value="1y">Last year</option>
+            </select>
 
-          {/* Chart Type Selector */}
-          <select
-            value={selectedChart}
-            onChange={(e) => {
-              const value = e.target.value
-              if (isValidChartType(value)) {
-                setSelectedChart(value)
-              }
-            }}
-            className="input-modern text-sm bg-background text-foreground"
-          >
-            <option value="area" className="bg-background text-foreground">Area Chart</option>
-            <option value="line" className="bg-background text-foreground">Line Chart</option>
-            <option value="bar" className="bg-background text-foreground">Bar Chart</option>
-          </select>
+            {/* Chart Type Selector */}
+            <select
+              value={selectedChart}
+              onChange={(e) => {
+                const value = e.target.value
+                if (isValidChartType(value)) {
+                  setSelectedChart(value)
+                }
+              }}
+              className="px-3 py-2 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="area">Area Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="bar">Bar Chart</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="h-64">
+      <div className="flex-1 p-4 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           {renderChart()}
         </ResponsiveContainer>

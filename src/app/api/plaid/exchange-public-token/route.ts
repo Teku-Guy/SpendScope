@@ -1,10 +1,11 @@
-// app/api/plaid/exchange-public-token/route.ts
+// app/api/plaid/exchange-public-token/route.ts - Secure Plaid integration
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { plaidClient } from '@/lib/plaid';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { storeUserPlaidTokens, encryptBankAccountData } from '@/lib/plaid-secure';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,25 +44,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update user with Plaid tokens
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        plaidAccessToken: access_token,
-        plaidItemId: item_id,
-      },
-    });
+    // Securely store encrypted Plaid tokens
+    await storeUserPlaidTokens(session.user.id, access_token, item_id);
 
     // Get accounts
     const accountsResponse = await plaidClient.accountsGet({
       access_token,
     });
 
-    // Store accounts in database
+    // Store accounts in database with encryption
     const accounts = accountsResponse.data.accounts;
     for (const account of accounts) {
-      // Properly type the account metadata for Prisma JSON
-      const accountMetadata: Prisma.InputJsonValue = {
+      // Encrypt sensitive account metadata
+      const encryptedMetadata = await encryptBankAccountData({
         account_id: account.account_id,
         name: account.name,
         official_name: account.official_name || null,
@@ -76,7 +71,7 @@ export async function POST(request: NextRequest) {
         },
         mask: account.mask || null,
         persistent_account_id: account.persistent_account_id || null,
-      };
+      });
 
       await prisma.bankAccount.upsert({
         where: { plaidAccountId: account.account_id },
@@ -86,7 +81,7 @@ export async function POST(request: NextRequest) {
           type: account.type,
           subtype: account.subtype || '',
           balance: account.balances.current || 0,
-          metadata: accountMetadata,
+          metadata: encryptedMetadata as Prisma.InputJsonValue,
         },
         create: {
           userId: session.user.id,
@@ -96,7 +91,7 @@ export async function POST(request: NextRequest) {
           type: account.type,
           subtype: account.subtype || '',
           balance: account.balances.current || 0,
-          metadata: accountMetadata,
+          metadata: encryptedMetadata as Prisma.InputJsonValue,
         },
       });
     }

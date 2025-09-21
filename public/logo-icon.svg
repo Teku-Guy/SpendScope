@@ -1,0 +1,21 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- App Icon Container - Apple's signature rounded rectangle -->
+  <rect x="0" y="0" width="1024" height="1024" rx="226" fill="#007AFF"/>
+  
+  <!-- Icon Content - Apple's minimal approach -->
+  <g transform="translate(512, 512)">
+    
+    <!-- Central organizing element - like Apple's Activity rings concept -->
+    <circle cx="0" cy="0" r="280" fill="none" stroke="white" stroke-width="40" opacity="0.3"/>
+    
+    <!-- Progress/budget ring - Apple loves progress indicators -->
+    <circle cx="0" cy="0" r="190" fill="none" stroke="white" stroke-width="60" 
+            stroke-dasharray="373 150" stroke-linecap="round" transform="rotate(-90)"/>
+    
+    <!-- Center element - simple and purposeful -->
+    <circle cx="0" cy="0" r="70" fill="white"/>
+    
+  </g>
+  
+</svg>

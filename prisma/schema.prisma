@@ -49,11 +49,23 @@ model User {
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
 
-    // SpendScope specific fields
-    plaidAccessToken String?
-    plaidItemId      String?
+    // SpendScope specific fields (encrypted)
+    plaidAccessToken String? @db.Text  // Will be encrypted
+    plaidItemId      String? @db.Text  // Will be encrypted
     preferences      Json?    @default("{}")
     monthlyBudget    Decimal? @db.Decimal(10, 2)
+
+    // 2FA settings
+    twoFactorEnabled     Boolean @default(false)
+    twoFactorMethods     String[] // Array of enabled methods: 'totp', 'email', 'sms', 'passkey'
+    totpSecret           String? @db.Text  // Encrypted TOTP secret
+    backupCodes          String[] // Array of encrypted backup codes
+    twoFactorVerifiedAt  DateTime?
+
+    // Phone for SMS 2FA (optional, encrypted)
+    phone                String? @db.Text
+    phoneVerified        Boolean @default(false)
+    phoneVerifiedAt      DateTime?
 
     // NextAuth relations
     accounts Account[]
@@ -65,6 +77,13 @@ model User {
     predictions      SpendingPrediction[]
     budgetAlerts     BudgetAlert[]
     budgetCategories BudgetCategory[]
+    dashboardLayouts DashboardLayout[]
+    dashboardPresets DashboardPreset[]
+
+    // 2FA relations
+    trustedDevices   TrustedDevice[]
+    passkeys         Passkey[]
+    twoFactorTokens  TwoFactorToken[]
 
     @@map("users")
 }
@@ -213,4 +232,160 @@ enum AlertSeverity {
     MEDIUM
     HIGH
     CRITICAL
+}
+
+// Dashboard customization models
+model DashboardLayout {
+    id          String  @id @default(cuid())
+    userId      String
+    user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    name        String
+    description String?
+    isDefault   Boolean @default(false)
+    isActive    Boolean @default(false)
+
+    // Layout configuration stored as JSON
+    layoutData      Json    // LayoutItem[] for each breakpoint
+    widgetConfigs   Json?   @default("{}")  // Widget-specific configurations
+    themeConfig     Json?   @default("{}")  // Color themes, spacing, etc.
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@unique([userId, name])
+    @@map("dashboard_layouts")
+}
+
+model DashboardPreset {
+    id          String  @id @default(cuid())
+    createdBy   String?
+    creator     User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+    name        String
+    description String
+    thumbnailUrl String?
+    category    PresetCategory @default(TEMPLATE)
+    tags        String[]
+
+    // Layout configuration
+    layoutData      Json    // Complete layout configuration
+    widgetConfigs   Json?   @default("{}")
+    themeConfig     Json?   @default("{}")
+
+    // Community features
+    isPublic        Boolean @default(false)
+    usageCount      Int     @default(0)
+    rating          Float?  // Average rating
+    ratingCount     Int     @default(0)
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@map("dashboard_presets")
+}
+
+// Preset rating system
+model PresetRating {
+    id        String  @id @default(cuid())
+    userId    String
+    presetId  String
+    rating    Int     // 1-5 stars
+    comment   String?
+
+    createdAt DateTime @default(now())
+
+    @@unique([userId, presetId])
+    @@map("preset_ratings")
+}
+
+enum PresetCategory {
+    DEFAULT     // Built-in system presets
+    TEMPLATE    // Starting templates
+    COMMUNITY   // User-shared presets
+    PERSONAL    // Private user presets
+}
+
+// 2FA and Security Models
+model TrustedDevice {
+    id            String   @id @default(cuid())
+    userId        String
+    user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    deviceFingerprint String   // Unique device identifier
+    deviceName        String?  // User-friendly device name
+    userAgent         String?  // Browser/device info
+    ipAddress         String?  // Last known IP
+
+    // Device trust info
+    trusted           Boolean @default(true)
+    trustLevel        TrustLevel @default(MEDIUM)
+
+    // Timestamps
+    firstSeen         DateTime @default(now())
+    lastSeen          DateTime @default(now())
+    trustedAt         DateTime @default(now())
+    expiresAt         DateTime? // Optional expiry for device trust
+
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+
+    @@unique([userId, deviceFingerprint])
+    @@map("trusted_devices")
+}
+
+model Passkey {
+    id                String   @id @default(cuid())
+    userId            String
+    user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    name              String   // User-given name for the passkey
+    credentialId      String   @unique  // WebAuthn credential ID (base64)
+    publicKey         String   @db.Text // Public key for verification
+    counter           BigInt   // WebAuthn signature counter
+
+    // Device info
+    deviceType        String?  // 'platform' or 'cross-platform'
+
+    // Timestamps
+    createdAt         DateTime @default(now())
+    lastUsedAt        DateTime?
+
+    @@map("passkeys")
+}
+
+model TwoFactorToken {
+    id            String      @id @default(cuid())
+    userId        String
+    user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    token         String      // Encrypted token
+    type          TokenType   // 'email', 'sms', 'backup'
+
+    // Expiry and usage
+    expiresAt     DateTime
+    usedAt        DateTime?
+    attempts      Int         @default(0)
+    maxAttempts   Int         @default(3)
+
+    // Additional data
+    metadata      Json?       @default("{}")  // Extra info like email/phone used
+
+    createdAt     DateTime    @default(now())
+
+    @@index([token])
+    @@index([expiresAt])
+    @@map("two_factor_tokens")
+}
+
+enum TrustLevel {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+enum TokenType {
+    EMAIL
+    SMS
+    BACKUP
 }

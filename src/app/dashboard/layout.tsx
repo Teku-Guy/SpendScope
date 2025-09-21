@@ -5,6 +5,7 @@ import { redirect,usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { LayoutDashboard, CreditCard, TrendingUp, Settings, LogOut, PiggyBank, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { MiniThemeSwitcher } from '@/components/ui/ThemeSwitcher'
+import { ThemeAwareLogo, LogoIcon } from '@/components/ui/ThemeAwareLogo'
 import { useState } from 'react'
 
 export default function DashboardLayout({
@@ -47,15 +48,17 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Enhanced mobile responsiveness */}
       <div className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-16' : 'w-64'} bg-card border-r border-border shadow-soft transition-all duration-300 ease-in-out lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-border">
-            {!sidebarCollapsed && (
-              <h1 className="text-xl font-bold text-gradient">SpendScope</h1>
+            {!sidebarCollapsed ? (
+              <ThemeAwareLogo size="sm" />
+            ) : (
+              <LogoIcon size={24} />
             )}
             <div className="flex items-center gap-2">
               {/* Desktop collapse button */}
@@ -184,16 +187,16 @@ export default function DashboardLayout({
         >
           <Menu className="h-6 w-6" />
         </button>
-        <h1 className="text-lg font-bold text-gradient">SpendScope</h1>
+        <ThemeAwareLogo size="sm" />
         <div className="ml-auto">
           <MiniThemeSwitcher />
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content - Enhanced mobile spacing */}
       <div className={`transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
-        <main className="py-4 lg:py-8">
-          <div className="px-4 sm:px-6 lg:px-8">
+        <main className="py-4 sm:py-6 lg:py-8">
+          <div className="px-3 sm:px-4 md:px-6 lg:px-8">
             <div className="mx-auto max-w-7xl">
               {children}
             </div>

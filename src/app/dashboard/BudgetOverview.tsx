@@ -158,104 +158,120 @@ export default function BudgetOverview() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={`loading-${i}`} className="animate-pulse bg-muted h-24 rounded-lg"></div>
-        ))}
+      <div className="h-full w-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <div className="animate-pulse">
+            <div className="h-6 bg-muted rounded w-1/3" />
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <div className="animate-pulse space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={`loading-${i}`} className="bg-muted h-24 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full w-full flex flex-col">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-foreground">Budget Overview</h2>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Budget
-        </Button>
-      </div>
-
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <div className="card-modern p-4 bg-amber-500/10 border-amber-500/20">
-          <div className="flex items-center mb-3">
-            <AlertTriangleIcon className="h-5 w-5 text-amber-600 mr-2" />
-            <h3 className="font-medium text-foreground">Budget Alerts</h3>
-          </div>
-          <div className="space-y-2">
-            {alerts.map((alert) => (
-              <div key={alert.id} className="flex justify-between items-center">
-                <p className="text-sm text-foreground/80">{alert.message}</p>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => markAlertAsRead(alert.id)}
-                >
-                  <CheckCircleIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Budget Cards */}
-      {budgets.length === 0 ? (
-        <div className="text-center py-12 card-modern gradient-subtle">
-          <DollarSignIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No budgets yet</h3>
-          <p className="text-muted-foreground mb-4">Create your first budget to start tracking your spending</p>
+      <div className="p-4 border-b border-border flex-shrink-0">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-foreground">Budget Overview</h2>
           <Button onClick={() => setShowCreateModal(true)}>
-            Create Budget
+            <PlusIcon className="h-4 w-4 mr-2" />
+            New Budget
           </Button>
         </div>
-      ) : (
-        <div className="budget-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {budgets.map((budget) => (
-            <div key={budget.id} className="budget-card card-modern p-6 hover:shadow-medium transition-all duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-semibold text-foreground">{budget.name}</h3>
-                  <p className="text-sm text-muted-foreground">{budget.category}</p>
-                </div>
-                <span className={`px-3 py-1 text-xs font-medium rounded-full text-white ${getBudgetStatusColor(budget.percentage)}`}>
-                  {getBudgetStatusText(budget.percentage)}
-                </span>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto p-4">
+        <div className="space-y-6">
+          {/* Alerts */}
+          {alerts.length > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+              <div className="flex items-center mb-3">
+                <AlertTriangleIcon className="h-5 w-5 text-amber-600 mr-2" />
+                <h3 className="font-medium text-foreground">Budget Alerts</h3>
               </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Spent</span>
-                  <span className="font-semibold text-foreground">${budget.currentSpend.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Budget</span>
-                  <span className="font-semibold text-foreground">${budget.budgetLimit.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Remaining</span>
-                  <span className={`font-semibold ${budget.remaining < 0 ? 'text-destructive' : 'text-emerald-600'}`}>
-                    ${Math.abs(budget.remaining).toFixed(2)} {budget.remaining < 0 ? 'over' : 'left'}
-                  </span>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-muted rounded-full h-2.5 border border-border/50">
-                  <div
-                    className={`h-full rounded-full ${getBudgetStatusColor(budget.percentage)} transition-all duration-300`}
-                    style={{ width: `${Math.min(budget.percentage, 100)}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-muted-foreground text-center font-medium">
-                  {budget.percentage.toFixed(1)}% of budget used
-                </p>
+              <div className="space-y-2">
+                {alerts.map((alert) => (
+                  <div key={alert.id} className="flex justify-between items-center">
+                    <p className="text-sm text-foreground/80">{alert.message}</p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => markAlertAsRead(alert.id)}
+                    >
+                      <CheckCircleIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Budget Cards */}
+          {budgets.length === 0 ? (
+            <div className="text-center py-12 bg-accent/20 rounded-lg">
+              <DollarSignIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No budgets yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first budget to start tracking your spending</p>
+              <Button onClick={() => setShowCreateModal(true)}>
+                Create Budget
+              </Button>
+            </div>
+          ) : (
+            <div className="budget-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {budgets.map((budget) => (
+                <div key={budget.id} className="bg-accent/20 border border-border rounded-lg p-4 hover:bg-accent/30 transition-all duration-200">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-semibold text-foreground">{budget.name}</h3>
+                      <p className="text-sm text-muted-foreground">{budget.category}</p>
+                    </div>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full text-white ${getBudgetStatusColor(budget.percentage)}`}>
+                      {getBudgetStatusText(budget.percentage)}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Spent</span>
+                      <span className="font-semibold text-foreground">${budget.currentSpend.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Budget</span>
+                      <span className="font-semibold text-foreground">${budget.budgetLimit.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Remaining</span>
+                      <span className={`font-semibold ${budget.remaining < 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                        ${Math.abs(budget.remaining).toFixed(2)} {budget.remaining < 0 ? 'over' : 'left'}
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-muted rounded-full h-2.5 border border-border/50">
+                      <div
+                        className={`h-full rounded-full ${getBudgetStatusColor(budget.percentage)} transition-all duration-300`}
+                        style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center font-medium">
+                      {budget.percentage.toFixed(1)}% of budget used
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Create Budget Modal */}
       <Modal

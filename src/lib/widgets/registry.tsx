@@ -1,3 +1,4 @@
+import React from 'react'
 import { Widget } from './types'
 
 // Import dashboard components
@@ -9,23 +10,56 @@ import CategoryBreakdown from '@/app/dashboard/CategoryBreakdown'
 import TransactionList from '@/app/dashboard/TransactionList'
 import BankAccountsList from '@/components/plaid/BankAccountsList'
 
+// Welcome Banner Component
+const WelcomeBanner: React.FC<{ session?: { user?: { name?: string } }; plaidLinkComponent?: React.ReactNode }> = ({
+  session,
+  plaidLinkComponent
+}) => (
+  <div className="apple-card p-8 apple-blur">
+    <h1 className="text-3xl font-bold text-foreground mb-3 letter-spacing-tight">
+      Welcome back, {session?.user?.name?.split(' ')[0] || 'there'}!
+    </h1>
+    <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
+      Here&apos;s an overview of your financial activity
+    </p>
+    {plaidLinkComponent}
+  </div>
+)
+
+// Spending Chart Wrapper
+const SpendingChartWrapper: React.FC<{ period?: '30d' | '7d' | '90d' | '1y'; chartType?: 'area' | 'bar' | 'line'; [key: string]: unknown }> = ({
+  period = '30d',
+  chartType = 'area',
+  ...props
+}) => (
+  <SpendingChart period={period} chartType={chartType} {...props} />
+)
+
+// Category Breakdown Wrapper
+const CategoryBreakdownWrapper: React.FC<{ period?: '30d' | '7d' | '90d' | '1y'; chartType?: 'pie' | 'bar'; [key: string]: unknown }> = ({
+  period = '30d',
+  chartType = 'pie',
+  ...props
+}) => (
+  <CategoryBreakdown period={period} chartType={chartType} {...props} />
+)
+
+// Transaction List Wrapper
+const TransactionListWrapper: React.FC<{ limit?: number; showFilters?: boolean; [key: string]: unknown }> = ({
+  limit = 10,
+  showFilters = true,
+  ...props
+}) => (
+  <TransactionList limit={limit} showFilters={showFilters} {...props} />
+)
+
 // Widget registry containing all available widgets
 export const WIDGET_REGISTRY: Record<string, Widget> = {
   'welcome-banner': {
     id: 'welcome-banner',
     name: 'Welcome Banner',
     description: 'Welcome message and account connection',
-    component: ({ session, plaidLinkComponent }: any) => (
-      <div className="apple-card p-8 apple-blur">
-        <h1 className="text-3xl font-bold text-foreground mb-3 letter-spacing-tight">
-          Welcome back, {session?.user?.name?.split(' ')[0] || 'there'}!
-        </h1>
-        <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-          Here&apos;s an overview of your financial activity
-        </p>
-        {plaidLinkComponent}
-      </div>
-    ),
+    component: WelcomeBanner,
     defaultSize: { w: 12, h: 3, minW: 6, minH: 3 },
     configurable: false,
     category: 'overview',
@@ -80,9 +114,7 @@ export const WIDGET_REGISTRY: Record<string, Widget> = {
     id: 'spending-chart',
     name: 'Spending Chart',
     description: 'Visual representation of your spending over time',
-    component: ({ period = '30d', chartType = 'area', ...props }: any) => (
-      <SpendingChart period={period} chartType={chartType} {...props} />
-    ),
+    component: SpendingChartWrapper,
     defaultSize: { w: 6, h: 5, minW: 4, minH: 4 },
     configurable: true,
     category: 'analytics',
@@ -93,9 +125,7 @@ export const WIDGET_REGISTRY: Record<string, Widget> = {
     id: 'category-breakdown',
     name: 'Category Breakdown',
     description: 'Breakdown of spending by category',
-    component: ({ period = '30d', chartType = 'pie', ...props }: any) => (
-      <CategoryBreakdown period={period} chartType={chartType} {...props} />
-    ),
+    component: CategoryBreakdownWrapper,
     defaultSize: { w: 6, h: 5, minW: 4, minH: 4 },
     configurable: true,
     category: 'analytics',
@@ -106,9 +136,7 @@ export const WIDGET_REGISTRY: Record<string, Widget> = {
     id: 'transaction-list',
     name: 'Recent Transactions',
     description: 'List of your most recent transactions',
-    component: ({ limit = 10, showFilters = true, ...props }: any) => (
-      <TransactionList limit={limit} showFilters={showFilters} {...props} />
-    ),
+    component: TransactionListWrapper,
     defaultSize: { w: 12, h: 6, minW: 6, minH: 4 },
     configurable: true,
     category: 'transactions',
@@ -132,3 +160,5 @@ export const getAllWidgets = (): Widget[] => {
 export const getAvailableWidgets = (): Widget[] => {
   return Object.values(WIDGET_REGISTRY).filter(widget => !widget.disabled)
 }
+
+export type { Widget } from './types'

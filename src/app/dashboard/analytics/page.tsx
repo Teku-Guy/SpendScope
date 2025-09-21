@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
   const [forecastData, setForecastData] = useState<ForecastData | null>(null)
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState('30d')
+  const [selectedPeriod, setSelectedPeriod] = useState<'30d' | '7d' | '90d' | '1y'>('30d')
   const [chartType, setChartType] = useState<'area' | 'bar' | 'line'>('area')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [hiddenWidgets, setHiddenWidgets] = useState<Set<string>>(new Set())
@@ -211,7 +211,7 @@ export default function AnalyticsPage() {
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
           <select
             value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
+            onChange={(e) => setSelectedPeriod(e.target.value as '30d' | '7d' | '90d' | '1y')}
             className="input-modern text-sm bg-background text-foreground"
           >
             {periods.map(period => (

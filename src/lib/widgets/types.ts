@@ -10,14 +10,14 @@ export interface WidgetSize {
 }
 
 export interface WidgetConfig {
-  [key: string]: any
+  [key: string]: string | number | boolean | undefined
 }
 
 export interface Widget {
   id: string
   name: string
   description: string
-  component: ComponentType<any>
+  component: ComponentType<Record<string, unknown>>
   defaultSize: WidgetSize
   configurable: boolean
   category: 'overview' | 'analytics' | 'budget' | 'transactions' | 'accounts'

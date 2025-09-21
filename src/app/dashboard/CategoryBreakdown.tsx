@@ -172,88 +172,98 @@ export default function CategoryBreakdown({
 
   if (loading) {
     return (
-      <div className="card-modern p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-muted rounded w-1/3 mb-4" />
-          <div className="h-64 bg-muted rounded" />
+      <div className="h-full w-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <div className="animate-pulse">
+            <div className="h-4 bg-muted rounded w-1/3" />
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <div className="animate-pulse h-full bg-muted rounded" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="card-modern p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-medium text-foreground">Spending by Category</h3>
-          <p className="text-sm text-muted-foreground">Total: {formatCurrency(totalSpent)}</p>
-        </div>
+    <div className="h-full w-full flex flex-col">
+      <div className="p-4 border-b border-border flex-shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-lg font-medium text-foreground">Spending by Category</h3>
+            <p className="text-sm text-muted-foreground">Total: {formatCurrency(totalSpent)}</p>
+          </div>
 
-        <div className="chart-controls mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-          {/* Period Selector */}
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="input-modern text-sm bg-background text-foreground"
-          >
-            <option value="7d" className="bg-background text-foreground">Last 7 days</option>
-            <option value="30d" className="bg-background text-foreground">Last 30 days</option>
-            <option value="90d" className="bg-background text-foreground">Last 3 months</option>
-            <option value="1y" className="bg-background text-foreground">Last year</option>
-          </select>
+          <div className="chart-controls mt-4 lg:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            {/* Period Selector */}
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="px-3 py-2 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 3 months</option>
+              <option value="1y">Last year</option>
+            </select>
 
-          {/* Chart Type Selector */}
-          <select
-            value={selectedChart}
-            onChange={(e) => setSelectedChart(e.target.value as 'pie' | 'bar')}
-            className="input-modern text-sm bg-background text-foreground"
-          >
-            <option value="pie" className="bg-background text-foreground">Pie Chart</option>
-            <option value="bar" className="bg-background text-foreground">Bar Chart</option>
-          </select>
+            {/* Chart Type Selector */}
+            <select
+              value={selectedChart}
+              onChange={(e) => setSelectedChart(e.target.value as 'pie' | 'bar')}
+              className="px-3 py-2 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="pie">Pie Chart</option>
+              <option value="bar">Bar Chart</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Chart */}
-        <div className={`chart-container ${selectedChart === 'bar' ? 'h-80' : 'h-64'}`}>
-          {selectedChart === 'pie' ? renderPieChart() : renderBarChart()}
-        </div>
+      <div className="flex-1 overflow-auto p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+          {/* Chart */}
+          <div className="min-h-0">
+            <div className={`chart-container h-full min-h-[250px]`}>
+              {selectedChart === 'pie' ? renderPieChart() : renderBarChart()}
+            </div>
+          </div>
 
-        {/* Category List */}
-        <div className="space-y-3">
-          {data.map((category) => (
-            <div key={category.category} className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div
-                  className="w-4 h-4 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: category.color }}
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {category.category}
+          {/* Category List */}
+          <div className="space-y-3 overflow-auto">
+            {data.map((category) => (
+              <div key={category.category} className="flex items-center justify-between p-3 bg-accent/20 rounded-lg hover:bg-accent/30 transition-colors">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-4 h-4 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {category.category}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {category.count} transactions
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-foreground">
+                    {formatCurrency(category.amount)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {category.count} transactions
+                    {category.percentage.toFixed(1)}%
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-muted-foreground">
-                  {formatCurrency(category.amount)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {category.percentage.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {data.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No spending data available</p>
-            </div>
-          )}
+            {data.length === 0 && (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">No spending data available</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

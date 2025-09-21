@@ -1,0 +1,45 @@
+<svg width="260" height="60" viewBox="0 0 260 60" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- App Icon Container - Apple's signature rounded rectangle -->
+  <g transform="translate(8, 8)">
+    <rect x="0" y="0" width="44" height="44" rx="10" fill="#007AFF"/>
+    
+    <!-- Icon Content - Apple's minimal approach -->
+    <g transform="translate(22, 22)">
+      
+      <!-- Central organizing element - like Apple's Activity rings concept -->
+      <circle cx="0" cy="0" r="12" fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+      
+      <!-- Progress/budget ring - Apple loves progress indicators -->
+      <circle cx="0" cy="0" r="8" fill="none" stroke="white" stroke-width="3" 
+              stroke-dasharray="15.7 6.3" stroke-linecap="round" transform="rotate(-90)"/>
+      
+      <!-- Center element - simple and purposeful -->
+      <circle cx="0" cy="0" r="3" fill="white"/>
+      
+    </g>
+  </g>
+  
+  <!-- Typography - Using SpendScope name -->
+  <g transform="translate(70, 18)">
+    <!-- SpendScope as Apple would style it -->
+    <text x="0" y="22" 
+          font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" 
+          font-size="22" 
+          font-weight="500" 
+          fill="#1D1D1F" 
+          letter-spacing="-0.4px">
+      SpendScope
+    </text>
+    
+    <!-- Apple's clean service descriptor style -->
+    <text x="0" y="34" 
+          font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif" 
+          font-size="8" 
+          font-weight="400" 
+          fill="#8E8E93" 
+          letter-spacing="0.3px">
+      INTELLIGENT SPENDING INSIGHTS
+    </text>
+  </g>
+</svg>

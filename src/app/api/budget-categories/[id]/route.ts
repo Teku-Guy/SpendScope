@@ -4,12 +4,13 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
 
@@ -32,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const categoryId = params.id;
+    const categoryId = id;
 
     // Check if category belongs to user
     const category = await prisma.budgetCategory.findFirst({
@@ -65,6 +66,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
 
@@ -87,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const categoryId = params.id;
+    const categoryId = id;
     const { name, budgetLimit, category, color } = await request.json();
 
     // Check if category belongs to user
@@ -114,7 +116,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         ...(category && { category }),
         ...(color && {
           rules: {
-            ...(existingCategory.rules as any),
+            ...(existingCategory.rules as Record<string, unknown>),
             color,
           },
         }),

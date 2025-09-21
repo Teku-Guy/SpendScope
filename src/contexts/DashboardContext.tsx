@@ -48,7 +48,7 @@ interface DashboardContextType extends DashboardState {
   // Preset management
   setCurrentPreset: (presetId: string) => void
   loadPreset: (presetId: string) => void
-  saveCurrentLayout: (name: string) => Promise<void>
+  saveCurrentLayout: (name: string, description?: string) => Promise<void>
   deletePreset: (presetId: string) => Promise<void>
 
   // Persistence
@@ -60,16 +60,50 @@ interface DashboardContextType extends DashboardState {
   setBreakpoint: (breakpoint: string) => void
 }
 
+// Smart layout processing function
+const processSmartLayout = (layout: LayoutItem[]): LayoutItem[] => {
+  if (!layout || layout.length === 0) return []
+
+  // Group widgets by row (y coordinate)
+  const rowGroups: { [key: number]: LayoutItem[] } = {}
+  layout.forEach(item => {
+    const rowKey = item.y
+    if (!rowGroups[rowKey]) rowGroups[rowKey] = []
+    rowGroups[rowKey].push(item)
+  })
+
+  // Process each row
+  const processedLayout: LayoutItem[] = []
+  Object.keys(rowGroups).forEach(rowKey => {
+    const rowItems = rowGroups[parseInt(rowKey)]
+
+    if (rowItems.length === 1) {
+      // Single widget on this row - expand it to full width
+      const item = rowItems[0]
+      processedLayout.push({
+        ...item,
+        x: 0,
+        w: 3 // Full width for 3-column grid
+      })
+    } else {
+      // Multiple widgets - keep their current sizing
+      processedLayout.push(...rowItems)
+    }
+  })
+
+  return processedLayout
+}
+
 // Default layout configuration
 const DEFAULT_LAYOUT: LayoutItem[] = [
-  { i: 'welcome-banner', x: 0, y: 0, w: 12, h: 3 },
-  { i: 'bank-accounts', x: 0, y: 3, w: 12, h: 4 },
-  { i: 'monthly-summary', x: 0, y: 7, w: 12, h: 4 },
-  { i: 'budget-overview', x: 0, y: 11, w: 12, h: 6 },
-  { i: 'spending-insights', x: 0, y: 17, w: 12, h: 5 },
-  { i: 'spending-chart', x: 0, y: 22, w: 6, h: 5 },
-  { i: 'category-breakdown', x: 6, y: 22, w: 6, h: 5 },
-  { i: 'transaction-list', x: 0, y: 27, w: 12, h: 6 }
+  { i: 'welcome-banner', x: 0, y: 0, w: 3, h: 3 },
+  { i: 'bank-accounts', x: 0, y: 3, w: 3, h: 4 },
+  { i: 'monthly-summary', x: 1, y: 3, w: 2, h: 4 },
+  { i: 'budget-overview', x: 0, y: 7, w: 3, h: 6 },
+  { i: 'spending-insights', x: 0, y: 13, w: 3, h: 5 },
+  { i: 'spending-chart', x: 0, y: 18, w: 1, h: 5 },
+  { i: 'category-breakdown', x: 1, y: 18, w: 2, h: 5 },
+  { i: 'transaction-list', x: 0, y: 23, w: 3, h: 6 }
 ]
 
 // Initial state
@@ -114,7 +148,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
         i: action.payload.widgetId,
         x: action.payload.position?.x || 0,
         y: action.payload.position?.y || Infinity, // Place at bottom
-        w: 6,
+        w: 1, // Default to 1 column width (will expand to full width if alone)
         h: 4
       }
       return {
@@ -220,31 +254,198 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_BREAKPOINT', payload: breakpoint })
   }, [])
 
-  // API functions (to be implemented)
+  // API functions
   const loadPreset = useCallback(async (presetId: string) => {
-    // TODO: Implement preset loading
-    console.log('Loading preset:', presetId)
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      dispatch({ type: 'SET_ERROR', payload: null })
+
+      const response = await fetch(`/api/dashboard/presets/${presetId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load preset')
+      }
+
+      const { preset } = await response.json()
+
+      // Apply preset layout temporarily
+      dispatch({ type: 'SET_LAYOUT', payload: preset.layoutData })
+
+      // Apply widget configurations
+      const configs = preset.widgetConfigs || {}
+      Object.entries(configs).forEach(([widgetId, config]) => {
+        dispatch({
+          type: 'SET_WIDGET_CONFIG',
+          payload: { widgetId, config: config as WidgetConfig }
+        })
+      })
+
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to load preset' })
+      throw error
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
   }, [])
 
-  const saveCurrentLayout = useCallback(async (name: string) => {
-    // TODO: Implement layout saving
-    console.log('Saving layout:', name)
-  }, [])
+  const saveCurrentLayout = useCallback(async (name: string, description?: string) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      dispatch({ type: 'SET_ERROR', payload: null })
+
+      const response = await fetch('/api/dashboard/layouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description,
+          layoutData: state.currentLayout,
+          widgetConfigs: state.widgetConfigs,
+          setAsActive: true
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save layout')
+      }
+
+      const { layout } = await response.json()
+
+      // Mark as not dirty since we just saved
+      dispatch({ type: 'SET_LAYOUT', payload: state.currentLayout })
+      return layout
+
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to save layout' })
+      throw error
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [state.currentLayout, state.widgetConfigs])
 
   const deletePreset = useCallback(async (presetId: string) => {
-    // TODO: Implement preset deletion
-    console.log('Deleting preset:', presetId)
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      dispatch({ type: 'SET_ERROR', payload: null })
+
+      const response = await fetch(`/api/dashboard/presets/${presetId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete preset')
+      }
+
+      // Refresh presets list
+      const presetsResponse = await fetch('/api/dashboard/presets')
+      if (presetsResponse.ok) {
+        const { presets } = await presetsResponse.json()
+        dispatch({ type: 'SET_PRESETS', payload: presets })
+      }
+
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete preset' })
+      throw error
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
   }, [])
 
   const saveLayout = useCallback(async () => {
-    // TODO: Implement layout persistence
-    console.log('Saving current layout')
-  }, [])
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      dispatch({ type: 'SET_ERROR', payload: null })
+
+      // Apply smart layout processing before saving
+      const processedLayout = processSmartLayout(state.currentLayout)
+
+      // Get current active layout
+      const layoutsResponse = await fetch('/api/dashboard/layouts')
+      const { layouts } = await layoutsResponse.json()
+      const activeLayout = layouts.find((l: { isActive: boolean; id: string }) => l.isActive)
+
+      if (activeLayout) {
+        // Update existing active layout
+        const response = await fetch(`/api/dashboard/layouts/${activeLayout.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            layoutData: processedLayout,
+            widgetConfigs: state.widgetConfigs
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save layout')
+        }
+      } else {
+        // Create new default layout
+        const response = await fetch('/api/dashboard/layouts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'My Dashboard',
+            layoutData: processedLayout,
+            widgetConfigs: state.widgetConfigs,
+            isDefault: true,
+            setAsActive: true
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to create layout')
+        }
+      }
+
+      // Mark as saved (not dirty)
+      dispatch({ type: 'SET_LAYOUT', payload: state.currentLayout })
+
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to save layout' })
+      throw error
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [state.currentLayout, state.widgetConfigs])
 
   const loadLayout = useCallback(async () => {
-    // TODO: Implement layout loading
-    console.log('Loading layout')
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      dispatch({ type: 'SET_ERROR', payload: null })
+
+      const response = await fetch('/api/dashboard/layouts')
+      if (!response.ok) {
+        throw new Error('Failed to load layouts')
+      }
+
+      const { layouts } = await response.json()
+      const activeLayout = layouts.find((l: { isActive: boolean; layoutData: unknown; widgetConfigs: unknown }) => l.isActive) || layouts[0]
+
+      if (activeLayout) {
+        dispatch({ type: 'SET_LAYOUT', payload: activeLayout.layoutData })
+
+        // Load widget configurations
+        const configs = activeLayout.widgetConfigs || {}
+        Object.entries(configs).forEach(([widgetId, config]) => {
+          dispatch({
+            type: 'SET_WIDGET_CONFIG',
+            payload: { widgetId, config: config as WidgetConfig }
+          })
+        })
+      }
+
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to load layout' })
+      console.error('Layout loading failed, using default:', error)
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
   }, [])
+
+  // Load layout on mount
+  useEffect(() => {
+    loadLayout()
+  }, [loadLayout])
 
   const contextValue: DashboardContextType = {
     ...state,

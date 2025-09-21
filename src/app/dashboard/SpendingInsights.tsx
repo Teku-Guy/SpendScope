@@ -97,10 +97,14 @@ export default function SpendingInsights() {
 
   if (loading) {
     return (
-      <div className="card-modern p-6">
-        <div className="animate-pulse">
-          <div className="h-6 bg-muted rounded w-1/3 mb-4" />
-          <div className="space-y-3">
+      <div className="h-full w-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <div className="animate-pulse">
+            <div className="h-6 bg-muted rounded w-1/3" />
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <div className="animate-pulse space-y-3">
             {Array.from({ length: 3 }, (_, i) => (
               <div key={`loading-${i}`} className="h-16 bg-muted rounded-lg" />
             ))}
@@ -112,12 +116,16 @@ export default function SpendingInsights() {
 
   if (!data || data.insights.length === 0) {
     return (
-      <div className="card-modern p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Spending Insights</h3>
-        <div className="text-center py-8">
-          <CheckCircleIcon className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
-          <p className="text-muted-foreground">Great! No significant insights to report.</p>
-          <p className="text-sm text-muted-foreground/80 mt-2">Your spending patterns look healthy.</p>
+      <div className="h-full w-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-foreground">Spending Insights</h3>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center">
+            <CheckCircleIcon className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
+            <p className="text-muted-foreground">Great! No significant insights to report.</p>
+            <p className="text-sm text-muted-foreground/80 mt-2">Your spending patterns look healthy.</p>
+          </div>
         </div>
       </div>
     )
@@ -126,8 +134,8 @@ export default function SpendingInsights() {
   const displayedInsights = showAll ? data.insights : data.insights.slice(0, 5)
 
   return (
-    <div className="card-modern">
-      <div className="p-6 border-b border-border">
+    <div className="h-full w-full flex flex-col">
+      <div className="p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">Spending Insights</h3>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -147,39 +155,39 @@ export default function SpendingInsights() {
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="space-y-4">
+      <div className="flex-1 overflow-auto p-4">
+        <div className="space-y-3">
           {displayedInsights.map((insight) => (
             <div
               key={insight.title + '-' + insight.type}
-              className={`p-4 border-l-4 rounded-r-lg bg-accent/30 ${getInsightBorderColor(insight.type, insight.impact)} hover:bg-accent/50 transition-colors duration-200`}
+              className={`p-3 border-l-4 rounded-r-lg bg-accent/20 ${getInsightBorderColor(insight.type, insight.impact)} hover:bg-accent/30 transition-colors duration-200`}
             >
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 mt-1">
                   {getInsightIcon(insight.type, insight.impact)}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-foreground">
+                    <h4 className="text-sm font-medium text-foreground truncate">
                       {insight.title}
                     </h4>
                     {insight.amount && (
-                      <span className="text-sm font-semibold text-foreground">
+                      <span className="text-sm font-semibold text-foreground ml-2 flex-shrink-0">
                         {formatCurrency(insight.amount)}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {insight.description}
                   </p>
                   {insight.recommendation && (
-                    <p className="text-xs text-muted-foreground mt-2 italic bg-muted/50 p-2 rounded border border-border/50">
+                    <p className="text-xs text-muted-foreground mt-2 bg-muted/40 p-2 rounded border border-border/30">
                       💡 {insight.recommendation}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center justify-between mt-2">
                     {insight.category && (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                         {insight.category}
                       </span>
                     )}
@@ -198,7 +206,7 @@ export default function SpendingInsights() {
         </div>
 
         {data.insights.length > 5 && (
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center flex-shrink-0">
             <button
               onClick={() => setShowAll(!showAll)}
               className="text-sm text-primary hover:text-primary/80 font-medium transition-colors duration-200 hover:underline"
